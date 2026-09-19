@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: users-service
+              uri: lb://users-service
+              predicates:
+                - Path=/users-service/**
+              filters:
+                - RewritePath=/users-service/(?<segment>.*), /${segment}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://keycloak:8081/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://service-discovery:8761/eureka
+  instance:
+    prefer-ip-address: true

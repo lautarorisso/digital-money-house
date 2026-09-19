@@ -1,0 +1,58 @@
+{
+  "realm": "${KEYCLOAK_REALM}",
+  "enabled": true,
+  "defaultRoles": [
+    "USER"
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "USER",
+        "description": "Regular user"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Administrator"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "service-account-dmh-backend",
+      "enabled": true,
+      "serviceAccountClientId": "dmh-backend",
+      "clientRoles": {
+        "realm-management": [
+          "realm-admin"
+        ]
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "dmh-frontend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:*",
+        "http://127.0.0.1:*"
+      ],
+      "webOrigins": [
+        "+"
+      ]
+    },
+    {
+      "clientId": "dmh-backend",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "${KEYCLOAK_BACKEND_CLIENT_SECRET}",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": []
+    }
+  ]
+}

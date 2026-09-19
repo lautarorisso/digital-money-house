@@ -1,0 +1,13 @@
+.git
+.atl
+**/target
+.mvn
+scripts
+docker
+.env
+.env.*
+.classpath
+.project
+.settings
+*.iml
+HELP.md
