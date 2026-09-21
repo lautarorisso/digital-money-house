@@ -9,12 +9,13 @@ El stack completo (API Gateway, service discovery, users-service, account-servic
 - Docker
 - Docker Compose
 - Git
+- Puertos libres: `3306`, `8080`, `8081`, `8083` y `8761`
 
 1. Clonar el repositorio.
 
    ```bash
-   git clone <url-repositorio>
-   cd Digital-Money-House
+   git clone https://github.com/lautarorisso/digital-money-house
+   cd digital-money-house
    ```
 
 2. **Configurar el entorno.** Copiar `.env.example` a `.env` y editar los valores (contraseñas, realm y clientes de Keycloak, credenciales de MySQL):
