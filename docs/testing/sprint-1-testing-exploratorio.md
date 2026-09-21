@@ -1,9 +1,5 @@
 # Testing exploratorio — Sprint 1
 
-**Proyecto:** Digital Money House (billetera virtual)
-**Fecha:** 17/09/2026
-**Entorno:** stack completo en Docker Compose (gateway, users-service, account-service, Keycloak, MySQL)
-
 ## Alcance
 
 Se realizó testing exploratorio sobre:
@@ -106,20 +102,21 @@ Se realizó testing exploratorio sobre:
 **Tour:** Logout
 **Escenario:** cerrar sesión enviando el refresh token en el header `Authorization`.
 **Resultado esperado:** HTTP 200 con revocación de la sesión.
-**Resultado obtenido:** HTTP 200 con `Authorization: Bearer <refresh token>`; el refresh token queda inutilizado en Keycloak.
+**Resultado obtenido:** HTTP 200; el refresh token queda inutilizado en Keycloak.
 
 ### Caso 13 — Logout sin token
 
 **Tour:** Logout
 **Escenario:** cerrar sesión sin enviar token.
-**Resultado esperado:** HTTP 200 — sin token no hay nada que revocar.
-**Resultado obtenido:** HTTP 200 con `Authorization` ausente.
+**Resultado esperado:** HTTP 400 — el logout exige un refresh token.
+**Resultado obtenido:** HTTP 200 — el servicio responde sin revocar nada.
+**Hallazgo:** BUG-004
+**Estado:** corregido y re-testeado; ver ficha BUG-004.
 
 ## Workflow principal
 
-Registro
+→ Registro
 → Login
-→ Obtención del token
 → Logout
 
 El camino feliz funciona de punta a punta y el logout cierra la sesión en Keycloak.
@@ -159,6 +156,17 @@ El camino feliz funciona de punta a punta y el logout cierra la sesión en Keycl
 **Corrección:** se tradujo el rechazo de Keycloak al contrato de la API. `KeycloakClient.createUser` ahora captura el `400 Bad Request` del proveedor, lee su `errorMessage` y responde `400` con un mensaje que indica el campo.
 **Retest:** nombres con `()`, `<>`, `;`, `&`, `[` y `%` responden HTTP 400 "Name contains invalid characters"; un apellido con `&` responde HTTP 400 "Last name contains invalid characters".
 
+### BUG-004 — Logout sin token responde 200 en lugar de 400
+
+**Tipo:** Validación / lógica de negocio
+**Descripción:** el endpoint `POST /user/logout` respondía HTTP 200 ante un refresh token vacío, en lugar de rechazar la petición.
+**Resultado esperado:** HTTP 400 — rechazar la ausencia de token.
+**Resultado obtenido:** HTTP 200, sesión sin revocar.
+**Severidad:** Media
+**Estado:** Corregido
+**Corrección:** `AuthService.logout` ahora lanza `ValidationException` ante token nulo o vacío, que el `GlobalExceptionHandler` responde como HTTP 400.
+**Retest:** logout sin token responde HTTP 400.
+
 ## Conclusión
 
-Se exploraron las funcionalidades incorporadas durante el sprint: registro, login y logout, verificando la persistencia contra MySQL y Keycloak. El camino feliz funciona de punta a punta, los datos se guardan de forma consistente, y los casos de error definidos por la consigna se cumplen. Los hallazgos están en el manejo de errores y en la validación; quedan documentados como BUG-001, BUG-002 y BUG-003 con su corrección y retest.
+Se exploraron las funcionalidades incorporadas durante el sprint: registro, login y logout, verificando la persistencia contra MySQL y Keycloak. El camino feliz funciona de punta a punta, los datos se guardan de forma consistente, y los casos de error definidos por la consigna se cumplen. Los hallazgos están en el manejo de errores y en la validación; quedan documentados como BUG-001, BUG-002, BUG-003 y BUG-004 con su corrección y retest.

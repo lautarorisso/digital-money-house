@@ -425,9 +425,9 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Logout sin token responde 200 (no-op)', function () {",
-                  "    pm.expect(pm.response.code).to.eql(200);",
-                  "});"
+"pm.test('Logout sin token responde 400', function () {",
+          "    pm.expect(pm.response.code).to.eql(400);",
+          "});"
                 ]
               }
             }

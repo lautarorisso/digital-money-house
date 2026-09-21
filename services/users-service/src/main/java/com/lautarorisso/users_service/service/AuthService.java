@@ -4,6 +4,7 @@ import com.lautarorisso.users_service.client.KeycloakClient;
 import com.lautarorisso.users_service.dto.LoginRequest;
 import com.lautarorisso.users_service.dto.LoginResponse;
 import com.lautarorisso.users_service.exception.ResourceNotFoundException;
+import com.lautarorisso.users_service.exception.ValidationException;
 import com.lautarorisso.users_service.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +26,7 @@ public class AuthService {
 
   public void logout(String refreshToken) {
     if (refreshToken == null || refreshToken.isBlank()) {
-      return;
+      throw new ValidationException("Refresh token is required");
     }
     keycloakClient.logout(refreshToken);
   }
