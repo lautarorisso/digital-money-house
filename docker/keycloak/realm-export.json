@@ -23,7 +23,7 @@
       "serviceAccountClientId": "dmh-backend",
       "clientRoles": {
         "realm-management": [
-          "realm-admin"
+          "manage-users"
         ]
       }
     }
