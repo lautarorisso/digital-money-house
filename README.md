@@ -18,11 +18,17 @@ El stack completo (API Gateway, service discovery, users-service, account-servic
    cd digital-money-house
    ```
 
-2. **Configurar el entorno.** Copiar `.env.example` a `.env` y editar los valores (contraseñas, realm y clientes de Keycloak, credenciales de MySQL):
+2. **Configurar el entorno.** Copiar `.env.example` a `.env` y reemplazar los valores antes de levantar el stack:
 
    ```bash
    cp .env.example .env
    ```
+
+   | Variable                                 | Qué es                                                                   | De dónde la sacás                                                                                                                                           |
+   | ---------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `KEYCLOAK_ADMIN_PASSWORD`                | Contraseña para entrar a la consola de admin de Keycloak                 | La elegís vos                                                                                                                                               |
+   | `KEYCLOAK_BACKEND_CLIENT_SECRET`         | Secreto compartido entre Keycloak y el backend (debe ser igual en ambos) | Se genera con `openssl rand -hex 32` en la terminal y se pega el resultado                                                                                  |
+   | `MYSQL_ROOT_PASSWORD` / `MYSQL_PASSWORD` | Contraseñas de la base de datos MySQL                                    | Las elegís vos                                                                                                                                              |
 
 3. Levantar todo el stack:
 

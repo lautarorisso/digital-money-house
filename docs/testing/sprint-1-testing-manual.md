@@ -34,7 +34,7 @@
 | ID      | Caso de prueba                  | Precondiciones  | Pasos y datos                                                         | Resultado esperado                   | Resultado obtenido                           | Estado   | Suite            |
 | ------- | ------------------------------- | --------------- | --------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------- | -------- | ---------------- |
 | Caso 12 | Logout con refresh token válido | Sesión iniciada | `POST /user/logout` con el refresh token en el header `Authorization` | HTTP 200 con revocación de la sesión | HTTP 200; el refresh token queda inutilizado | Aprobado | Humo y regresión |
-| Caso 13 | Logout sin token                | —               | `POST /user/logout` sin enviar token                                  | HTTP 400 — el logout exige token                                            | HTTP 200 (defecto corregido; retest aprobado)              | Aprobado | Regresión        |
+| Caso 13 | Logout sin token                | —               | `POST /user/logout` sin enviar token                                  | HTTP 400 — el logout exige token                                            | HTTP 400 (defecto corregido; retest aprobado)              | Aprobado | Regresión        |
 
 ## Suite de prueba ejecutable
 
