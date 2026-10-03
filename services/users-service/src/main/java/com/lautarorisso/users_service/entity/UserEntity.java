@@ -60,16 +60,21 @@ public class UserEntity {
   @Pattern(regexp = "^\\+?[0-9\\s()-]{6,20}$", message = "Phone format is invalid")
   private String telefono;
 
+  @Column(name = "keycloak_sub", nullable = false, length = 36)
+  private String keycloakSub;
+
   @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
   @JoinTable(name = "user_rol", joinColumns = @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_user_rol_user")), inverseJoinColumns = @JoinColumn(name = "rol_id", foreignKey = @ForeignKey(name = "fk_user_rol_rol")))
   private List<RolEntity> roles = new ArrayList<>();
 
-  public UserEntity(String nombre, String apellido, Long dni, String email, String telefono, List<RolEntity> roles) {
+  public UserEntity(String nombre, String apellido, Long dni, String email, String telefono,
+      String keycloakSub, List<RolEntity> roles) {
     this.nombre = nombre;
     this.apellido = apellido;
     this.dni = dni;
     this.email = email;
     this.telefono = telefono;
+    this.keycloakSub = keycloakSub;
     this.roles = roles;
   }
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -42,6 +43,21 @@ public class GlobalExceptionHandler {
   public ApiError handleUnreadableBody(HttpMessageNotReadableException ex, HttpServletRequest request) {
     return new ApiError(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),
         "Bad Request", "Malformed JSON request body", request.getRequestURI());
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ApiError handlePathVariableTypeMismatch(MethodArgumentTypeMismatchException ex,
+      HttpServletRequest request) {
+    return new ApiError(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),
+        "Bad Request", "Invalid path parameter", request.getRequestURI());
+  }
+
+  @ExceptionHandler(ForbiddenException.class)
+  @ResponseStatus(HttpStatus.FORBIDDEN)
+  public ApiError handleForbidden(ForbiddenException ex, HttpServletRequest request) {
+    return new ApiError(LocalDateTime.now(), HttpStatus.FORBIDDEN.value(),
+        "Forbidden", ex.getMessage(), request.getRequestURI());
   }
 
   @ExceptionHandler(ResourceNotFoundException.class)

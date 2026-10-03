@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -35,9 +36,17 @@ public class AccountEntity {
   @Column(name = "alias", nullable = false, length = 60)
   private String alias;
 
-  public AccountEntity(Long userId, String cvu, String alias) {
+  @Column(name = "balance", nullable = false, precision = 12, scale = 2)
+  private BigDecimal balance;
+
+  @Column(name = "owner_sub", nullable = false, length = 36)
+  private String ownerSub;
+
+  public AccountEntity(Long userId, String cvu, String alias, String ownerSub) {
     this.userId = userId;
     this.cvu = cvu;
     this.alias = alias;
+    this.balance = BigDecimal.ZERO;
+    this.ownerSub = ownerSub;
   }
 }

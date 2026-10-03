@@ -63,7 +63,7 @@ class UserServiceTest {
     when(savedUser.getDni()).thenReturn(request.dni());
     when(savedUser.getEmail()).thenReturn(request.email());
     when(savedUser.getTelefono()).thenReturn(request.telefono());
-    when(accountClient.createAccount(new CreateAccountRequest(42L)))
+    when(accountClient.createAccount(new CreateAccountRequest(42L, "subject-123")))
         .thenReturn(new AccountResponse(9L, 42L, "1234567890123456789012", "casa.rio.sol"));
 
     RegisterResponse response = userService.register(request);
@@ -72,7 +72,7 @@ class UserServiceTest {
     assertEquals("1234567890123456789012", response.cvu());
     assertEquals("casa.rio.sol", response.alias());
     verify(userRepository).save(any(UserEntity.class));
-    verify(accountClient).createAccount(new CreateAccountRequest(42L));
+    verify(accountClient).createAccount(new CreateAccountRequest(42L, "subject-123"));
   }
 
   @Test
@@ -92,7 +92,7 @@ class UserServiceTest {
     when(keycloakClient.createUser(any(), any(), any(), any(), any(), any())).thenReturn("subject-123");
     when(userRepository.save(any(UserEntity.class))).thenReturn(savedUser);
     when(savedUser.getId()).thenReturn(42L);
-    when(accountClient.createAccount(new CreateAccountRequest(42L)))
+    when(accountClient.createAccount(new CreateAccountRequest(42L, "subject-123")))
         .thenThrow(new RuntimeException("account service unavailable"));
 
     ServiceUnavailableException exception = assertThrows(ServiceUnavailableException.class,

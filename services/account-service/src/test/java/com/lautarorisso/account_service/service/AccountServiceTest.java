@@ -42,13 +42,14 @@ class AccountServiceTest {
     when(savedAccount.getCvu()).thenReturn("1234567890123456789012");
     when(savedAccount.getAlias()).thenReturn("casa.rio.sol");
 
-    AccountResponse response = accountService.createAccount("dmh-backend", 42L);
+    AccountResponse response = accountService.createAccount("dmh-backend", 42L, "subject-123");
 
     assertEquals("1234567890123456789012", response.cvu());
     assertEquals("casa.rio.sol", response.alias());
     ArgumentCaptor<AccountEntity> captor = ArgumentCaptor.forClass(AccountEntity.class);
     verify(accountRepository).save(captor.capture());
     assertEquals(42L, captor.getValue().getUserId());
+    assertEquals("subject-123", captor.getValue().getOwnerSub());
   }
 
   @Test
@@ -56,7 +57,7 @@ class AccountServiceTest {
     when(accountRepository.existsByUserId(42L)).thenReturn(true);
 
     assertThrows(ValidationException.class,
-        () -> accountService.createAccount("dmh-backend", 42L));
+        () -> accountService.createAccount("dmh-backend", 42L, "subject-123"));
 
     verify(cvuGenerator, never()).generate();
     verify(aliasGenerator, never()).generate();

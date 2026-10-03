@@ -1,13 +1,19 @@
 package com.lautarorisso.account_service.controller;
 
 import com.lautarorisso.account_service.dto.AccountResponse;
+import com.lautarorisso.account_service.dto.AccountDetailResponse;
 import com.lautarorisso.account_service.dto.CreateAccountRequest;
+import com.lautarorisso.account_service.dto.TransactionResponse;
 import com.lautarorisso.account_service.service.AccountService;
+import com.lautarorisso.account_service.service.TransactionService;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,12 +26,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
 
   private final AccountService accountService;
+  private final TransactionService transactionService;
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public AccountResponse create(@AuthenticationPrincipal Jwt jwt,
       @RequestBody(required = false) CreateAccountRequest request) {
     Long userId = request == null ? null : request.userId();
-    return accountService.createAccount(jwt.getClaimAsString("azp"), userId);
+    String ownerSub = request == null ? null : request.ownerSub();
+    return accountService.createAccount(jwt.getClaimAsString("azp"), userId, ownerSub);
+  }
+
+  @GetMapping("/{id}")
+  public AccountDetailResponse getById(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") Long id) {
+    return accountService.getAccountDetail(id, jwt.getSubject());
+  }
+
+  @GetMapping("/{id}/transactions")
+  public List<TransactionResponse> getTransactions(@AuthenticationPrincipal Jwt jwt,
+      @PathVariable("id") Long id) {
+    return transactionService.getTransactions(id, jwt.getSubject());
   }
 }
