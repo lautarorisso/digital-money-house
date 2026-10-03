@@ -113,6 +113,15 @@ Se realizó testing exploratorio sobre:
 **Hallazgo:** BUG-004
 **Estado:** corregido y re-testeado; ver ficha BUG-004.
 
+### Caso 14 — Logout con refresh token inválido
+
+**Tour:** Logout
+**Escenario:** cerrar sesión enviando un refresh token inválido en el header `Authorization`.
+**Resultado esperado:** HTTP 400 indicando que el refresh token es inválido o expiró.
+**Resultado obtenido:** HTTP 200.
+**Hallazgo:** BUG-005
+**Estado:** corregido y re-testeado; ver ficha BUG-005.
+
 ## Workflow principal
 
 → Registro
@@ -167,6 +176,17 @@ El camino feliz funciona de punta a punta y el logout cierra la sesión en Keycl
 **Corrección:** `AuthService.logout` ahora lanza `ValidationException` ante token nulo o vacío, que el `GlobalExceptionHandler` responde como HTTP 400.
 **Retest:** logout sin token responde HTTP 400.
 
+### BUG-005 — Logout con refresh token inválido responde 200 en lugar de 400
+
+**Tipo:** Validación / integración
+**Descripción:** el endpoint `POST /user/logout` respondía HTTP 200 cuando Keycloak rechazaba un refresh token inválido, expirado o revocado.
+**Resultado esperado:** HTTP 400 indicando que el refresh token es inválido o expiró.
+**Resultado obtenido:** HTTP 200, porque el rechazo de Keycloak era absorbido por el cliente de integración.
+**Severidad:** Media
+**Estado:** Corregido
+**Corrección:** `KeycloakClient.logout` traduce el `400 Bad Request` de Keycloak a `ValidationException`; el `GlobalExceptionHandler` responde HTTP 400.
+**Retest:** logout con un refresh token inválido responde HTTP 400 con el mensaje "Invalid or expired refresh token".
+
 ## Conclusión
 
-Se exploraron las funcionalidades incorporadas durante el sprint: registro, login y logout, verificando la persistencia contra MySQL y Keycloak. El camino feliz funciona de punta a punta, los datos se guardan de forma consistente, y los casos de error definidos por la consigna se cumplen. Los hallazgos están en el manejo de errores y en la validación; quedan documentados como BUG-001, BUG-002, BUG-003 y BUG-004 con su corrección y retest.
+Se exploraron las funcionalidades incorporadas durante el sprint: registro, login y logout, verificando la persistencia contra MySQL y Keycloak. El camino feliz funciona de punta a punta, los datos se guardan de forma consistente, y los casos de error definidos por la consigna se cumplen. Los hallazgos están en el manejo de errores y en la validación; quedan documentados como BUG-001, BUG-002, BUG-003, BUG-004 y BUG-005 con su corrección y retest.

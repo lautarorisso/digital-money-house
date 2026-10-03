@@ -73,7 +73,7 @@ Se corre carpeta por carpeta, en este orden — cada request tiene aserciones au
 
 1. **Registro** (7 requests): `POST /users-service/users/register`
 2. **Login** (4 requests): `POST /users-service/auth/login`
-3. **Logout** (2 requests): `POST /users-service/user/logout`
+3. **Logout** (3 requests): `POST /users-service/user/logout`
 
 > El primer request genera un email único por corrida, así que la colección se puede correr todas las veces que quieras sin repetir datos.
 

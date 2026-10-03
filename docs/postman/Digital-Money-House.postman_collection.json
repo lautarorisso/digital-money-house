@@ -432,6 +432,33 @@
               }
             }
           ]
+        },
+        {
+          "name": "Logout con refresh token inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-refresh-token"
+              }
+            ],
+            "url": "{{baseUrl}}/users-service/user/logout"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Logout con refresh token inválido responde 400', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "    pm.expect(pm.response.json().message).to.eql('Invalid or expired refresh token');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

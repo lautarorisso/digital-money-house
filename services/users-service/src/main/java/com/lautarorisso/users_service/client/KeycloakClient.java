@@ -161,9 +161,11 @@ public class KeycloakClient {
           .body(form)
           .retrieve()
           .toBodilessEntity();
+    } catch (HttpClientErrorException.BadRequest e) {
+      throw new ValidationException("Invalid or expired refresh token");
     } catch (HttpClientErrorException e) {
-      log.info("Logout: refresh token already invalid or revoked in Keycloak ({}), session considered closed",
-          e.getStatusCode().value());
+      throw new ServiceUnavailableException(
+          "Identity provider failed during logout (" + e.getStatusCode().value() + ")", e);
     } catch (HttpServerErrorException | ResourceAccessException e) {
       throw new ServiceUnavailableException("Identity provider unavailable during logout", e);
     }
