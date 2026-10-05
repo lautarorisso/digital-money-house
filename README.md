@@ -73,13 +73,26 @@ Se corre carpeta por carpeta, en este orden — cada request tiene aserciones au
 
 1. **Registro** (7 requests): `POST /users-service/users/register`
 2. **Login** (4 requests): `POST /users-service/auth/login`
-3. **Logout** (2 requests): `POST /users-service/user/logout`
+3. **Logout** (3 requests): `POST /users-service/user/logout`
+
+Para Sprint 2, seleccionar el environment local y pulsar **Run** sobre la carpeta **Sprint 2** completa. Registra dos usuarios, inicia sesión y prepara sus datos automáticamente antes de ejecutar los 16 casos. No hace falta cargar credenciales ni IDs; ver la [planilla](docs/testing/sprint-2-testing-manual.md).
 
 > El primer request genera un email único por corrida, así que la colección se puede correr todas las veces que quieras sin repetir datos.
 
 ## Planilla de casos de prueba
 
 - [Planilla de casos de prueba (Sprint 1)](docs/testing/sprint-1-testing-manual.md)
+- [Planilla de casos de prueba (Sprint 2)](docs/testing/sprint-2-testing-manual.md)
+
+## Testing automatizado
+
+Con Java 21 y el stack Docker activo, ejecutar los 11 casos de humo de Sprint 2:
+
+```bash
+./mvnw -pl services/api-gateway -Dtest=Sprint2SmokeIT -Ddmh.baseUrl=http://localhost:8080 test
+```
+
+La suite registra e inicia sesión automáticamente; no requiere credenciales ni IDs. Los tests habituales siguen ejecutándose con `./mvnw test`.
 
 ## Notas
 

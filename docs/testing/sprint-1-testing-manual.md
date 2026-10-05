@@ -2,11 +2,11 @@
 
 ## Resultado general
 
-- Total de casos: 13
-- Aprobados: 13 / 13
+- Total de casos: 14
+- Aprobados: 14 / 14
 - Fallidos: 0
 - Suite de humo: 3 casos (registro, login y logout con datos válidos)
-- Suite de regresión: 13 casos (todos los del sprint, incluidos error/validación y retests de defectos corregidos)
+- Suite de regresión: 14 casos (todos los del sprint, incluidos error/validación y retests de defectos corregidos)
 
 ## Registro
 
@@ -35,6 +35,7 @@
 | ------- | ------------------------------- | --------------- | --------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------- | -------- | ---------------- |
 | Caso 12 | Logout con refresh token válido | Sesión iniciada | `POST /user/logout` con el refresh token en el header `Authorization` | HTTP 200 con revocación de la sesión | HTTP 200; el refresh token queda inutilizado | Aprobado | Humo y regresión |
 | Caso 13 | Logout sin token                | —               | `POST /user/logout` sin enviar token                                  | HTTP 400 — el logout exige token                                            | HTTP 400 (defecto corregido; retest aprobado)              | Aprobado | Regresión        |
+| Caso 14 | Logout con refresh token inválido | —             | `POST /user/logout` con un refresh token inválido en el header `Authorization` | HTTP 400 indicando que el refresh token es inválido o expiró | HTTP 400 con mensaje de refresh token inválido o expirado (defecto corregido; retest aprobado) | Aprobado | Regresión |
 
 ## Suite de prueba ejecutable
 
@@ -53,6 +54,7 @@ La suite ejecutable es la colección de Postman `Digital-Money-House.postman_col
 11. Login con campos vacíos
 12. Logout con refresh token
 13. Logout sin token
+14. Logout con refresh token inválido
 
 La suite de humo se forma con los requests del camino feliz: Registro exitoso → Login exitoso → Logout con refresh token.
 

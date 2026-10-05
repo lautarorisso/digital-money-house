@@ -10,6 +10,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -44,11 +45,33 @@ public class GlobalExceptionHandler {
         "Bad Request", "Malformed JSON request body", request.getRequestURI());
   }
 
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  public ApiError handlePathVariableTypeMismatch(MethodArgumentTypeMismatchException ex,
+      HttpServletRequest request) {
+    return new ApiError(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),
+        "Bad Request", "Invalid path parameter", request.getRequestURI());
+  }
+
   @ExceptionHandler(ForbiddenException.class)
   @ResponseStatus(HttpStatus.FORBIDDEN)
   public ApiError handleForbidden(ForbiddenException ex, HttpServletRequest request) {
     return new ApiError(LocalDateTime.now(), HttpStatus.FORBIDDEN.value(),
         "Forbidden", ex.getMessage(), request.getRequestURI());
+  }
+
+  @ExceptionHandler(ResourceNotFoundException.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public ApiError handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+    return new ApiError(LocalDateTime.now(), HttpStatus.NOT_FOUND.value(),
+        "Not Found", ex.getMessage(), request.getRequestURI());
+  }
+
+  @ExceptionHandler(ConflictException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public ApiError handleConflict(ConflictException ex, HttpServletRequest request) {
+    return new ApiError(LocalDateTime.now(), HttpStatus.CONFLICT.value(),
+        "Conflict", ex.getMessage(), request.getRequestURI());
   }
 
   @ExceptionHandler(NoResourceFoundException.class)

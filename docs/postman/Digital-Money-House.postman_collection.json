@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "e9c12f6a-a10a-4a29-ae9b-1584a5d6b9f6",
-    "name": "Digital Money House — Sprint 1",
-    "description": "Colección de testing exploratorio del Sprint 1: registro, login y logout. Requiere el stack levantado con `docker compose up -d --build` y el environment 'Digital Money House — Local'.",
+    "name": "Digital Money House — Sprint 1 y Sprint 2",
+    "description": "Con el stack Docker activo, seleccionar el environment local y ejecutar la carpeta Sprint 2 completa. Prepara dos usuarios, inicia sesión y verifica sus cuentas antes de ejecutar los 16 casos. No requiere credenciales ni IDs manuales. Sprint 1 conserva sus carpetas Registro, Login y Logout.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -432,6 +432,255 @@
               }
             }
           ]
+        },
+        {
+          "name": "Logout con refresh token inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid-refresh-token"
+              }
+            ],
+            "url": "{{baseUrl}}/users-service/user/logout"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Logout con refresh token inválido responde 400', function () {",
+                  "    pm.expect(pm.response.code).to.eql(400);",
+                  "    pm.expect(pm.response.json().message).to.eql('Invalid or expired refresh token');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sprint 2",
+      "description": "Ejecutar esta carpeta completa con Run. Los primeros seis requests preparan dos usuarios nuevos y verifican sus cuentas. Luego se ejecutan los 16 casos, con saldo cero y sin movimientos. Las tarjetas se eliminan al finalizar. Si los IDs de cuenta y usuario no coinciden, la comprobación de CVU/alias detiene la ejecución sin probar contra otra cuenta.",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const match = pm.info.requestName.match(/^Caso (\\d+)/);",
+        "if (match) {",
+        "const number = Number(match[1]);",
+        "const expected = {15:200,16:200,17:200,18:200,19:201,20:201,21:201,22:200,23:200,24:400,25:409,26:403,27:404,28:200,29:200,30:404};",
+        "pm.test('Estado HTTP esperado', () => pm.expect(pm.response.code).to.eql(expected[number]));",
+        "if ([28,29].includes(number)) {",
+        "  pm.test('Eliminación sin cuerpo', () => pm.expect(pm.response.text()).to.eql(''));",
+        "} else if (expected[number] >= 400) {",
+        "  pm.test('Error informado', () => {",
+        "    const error = pm.response.json();",
+        "    pm.expect(error.status).to.eql(expected[number]);",
+        "    pm.expect(error.message).to.be.a('string').and.not.empty;",
+        "  });",
+        "}",
+        "}"
+      ] } }],
+      "item": [
+        {
+          "name": "Preparación - Registrar usuario principal",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Juan\",\"apellido\":\"Perez\",\"dni\":30111223,\"email\":\"{{email}}\",\"telefono\":\"+541155551234\",\"password\":\"{{password}}\"}" } },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "const run = pm.variables.replaceIn('{{$guid}}');",
+              "pm.environment.set('email', 'sprint2-a-' + run + '@dmh.test');",
+              "pm.environment.set('otherEmail', 'sprint2-b-' + run + '@dmh.test');",
+              "pm.environment.set('password', 'Passw0rd!23');",
+              "pm.environment.set('creditNumber', Date.now().toString() + '001');",
+              "pm.environment.set('debitNumber', Date.now().toString() + '002');",
+              "['userId','accountId','otherAccountId','accessToken','refreshToken','otherAccessToken','creditCardId','debitCardId','accountCvu','accountAlias','otherAccountCvu','otherAccountAlias'].forEach(key => pm.environment.unset(key));"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Usuario principal registrado', () => pm.expect(pm.response.code).to.eql(201));",
+              "if (pm.response.code !== 201) { pm.execution.setNextRequest(null); } else {",
+              "  const user = pm.response.json();",
+              "  pm.environment.set('userId', user.id);",
+              "  pm.environment.set('accountId', user.id);",
+              "  pm.environment.set('accountCvu', user.cvu);",
+              "  pm.environment.set('accountAlias', user.alias);",
+              "}"
+            ] } }
+          ]
+        },
+        {
+          "name": "Preparación - Registrar segundo usuario",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Ana\",\"apellido\":\"Perez\",\"dni\":30111224,\"email\":\"{{otherEmail}}\",\"telefono\":\"+541155551235\",\"password\":\"{{password}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Segundo usuario registrado', () => pm.expect(pm.response.code).to.eql(201));",
+            "if (pm.response.code !== 201) { pm.execution.setNextRequest(null); } else {",
+            "  const user = pm.response.json();",
+            "  pm.environment.set('otherAccountId', user.id);",
+            "  pm.environment.set('otherAccountCvu', user.cvu);",
+            "  pm.environment.set('otherAccountAlias', user.alias);",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Login principal",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\",\"password\":\"{{password}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const login = pm.response.json();",
+            "const valid = pm.response.code === 200 && Boolean(login.accessToken);",
+            "pm.test('Login principal válido', () => pm.expect(valid).to.eql(true));",
+            "if (!valid) { pm.execution.setNextRequest(null); } else {",
+            "  pm.environment.set('accessToken', login.accessToken);",
+            "  pm.environment.set('refreshToken', login.refreshToken);",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Login segundo usuario",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"{{otherEmail}}\",\"password\":\"{{password}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const login = pm.response.json();",
+            "const valid = pm.response.code === 200 && Boolean(login.accessToken);",
+            "pm.test('Login secundario válido', () => pm.expect(valid).to.eql(true));",
+            "if (!valid) { pm.execution.setNextRequest(null); } else { pm.environment.set('otherAccessToken', login.accessToken); }"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Verificar cuenta principal",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{accountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const account = pm.response.json();",
+            "const valid = pm.response.code === 200 && account.cvu === pm.environment.get('accountCvu') && account.alias === pm.environment.get('accountAlias');",
+            "pm.test('Cuenta principal coincide con el registro', () => pm.expect(valid).to.eql(true));",
+            "if (!valid) pm.execution.setNextRequest(null);"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Verificar segunda cuenta",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{otherAccessToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{otherAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const account = pm.response.json();",
+            "const valid = pm.response.code === 200 && account.cvu === pm.environment.get('otherAccountCvu') && account.alias === pm.environment.get('otherAccountAlias');",
+            "pm.test('Segunda cuenta coincide con el registro', () => pm.expect(valid).to.eql(true));",
+            "if (!valid) pm.execution.setNextRequest(null);"
+          ] } }]
+        },
+        {
+          "name": "Caso 15 - Consultar saldo, CVU y alias",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{accountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Datos de la cuenta propia', () => {",
+            "  const account = pm.response.json();",
+            "  pm.expect(account.id).to.eql(Number(pm.environment.get('accountId')));",
+            "  pm.expect(account.balance).to.eql(0);",
+            "  pm.expect(account.cvu).to.match(/^\\d{22}$/);",
+            "  pm.expect(account.alias).to.be.a('string').and.not.empty;",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Caso 16 - Consultar cuenta sin movimientos",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{accountId}}/transactions" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Sin movimientos en Sprint 2', () => pm.expect(pm.response.json()).to.eql([]));"
+          ] } }]
+        },
+        {
+          "name": "Caso 17 - Consultar perfil propio",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/users-service/users/{{userId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Perfil propio sin credenciales', () => {",
+            "  const user = pm.response.json();",
+            "  pm.expect(user).to.have.all.keys('id','nombre','apellido','dni','email','telefono');",
+            "  pm.expect(user.id).to.eql(Number(pm.environment.get('userId')));",
+            "  pm.expect(user.email).to.eql(pm.environment.get('email'));",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Caso 18 - Listar tarjetas sin asociaciones",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Lista vacía', () => pm.expect(pm.response.json()).to.eql([]));"
+          ] } }]
+        },
+        {
+          "name": "Caso 19 - Crear tarjeta de crédito",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/cards", "body": { "mode": "raw", "raw": "{\"cardNumber\":\"{{creditNumber}}\",\"type\":\"credit\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Tarjeta CREDIT creada', () => {",
+            "  const card = pm.response.json();",
+            "  pm.expect(card).to.have.all.keys('id','type');",
+            "  pm.expect(card.type).to.eql('CREDIT');",
+            "  pm.environment.set('creditCardId', card.id);",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Caso 20 - Asociar tarjeta existente",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/cards", "body": { "mode": "raw", "raw": "{\"cardNumber\":\"{{creditNumber}}\",\"type\":\"CREDIT\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('La asociación conserva la tarjeta', () => {",
+            "  pm.expect(pm.response.json()).to.eql({id:Number(pm.environment.get('creditCardId')),type:'CREDIT'});",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Caso 21 - Crear y asociar tarjeta de débito",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/cards", "body": { "mode": "raw", "raw": "{\"cardNumber\":\"{{debitNumber}}\",\"type\":\"dEbIt\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Tarjeta DEBIT creada y asociada', () => {",
+            "  const card = pm.response.json();",
+            "  pm.expect(card).to.have.all.keys('id','type');",
+            "  pm.expect(card.type).to.eql('DEBIT');",
+            "  pm.environment.set('debitCardId', card.id);",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Caso 22 - Listar tarjetas asociadas",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Ambas tarjetas, sin número completo', () => {",
+            "  const expected = [{id:Number(pm.environment.get('creditCardId')),type:'CREDIT'},{id:Number(pm.environment.get('debitCardId')),type:'DEBIT'}].sort((a,b) => a.id-b.id);",
+            "  pm.expect(pm.response.json()).to.eql(expected);",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Caso 23 - Consultar detalle de tarjeta propia",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards/{{creditCardId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Detalle de la tarjeta seleccionada', () => pm.expect(pm.response.json()).to.eql({id:Number(pm.environment.get('creditCardId')),type:'CREDIT'}));"
+          ] } }]
+        },
+        {
+          "name": "Caso 24 - Crear tarjeta con número inválido",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/cards", "body": { "mode": "raw", "raw": "{\"cardNumber\":\"123\",\"type\":\"DEBIT\"}" } }
+        },
+        {
+          "name": "Caso 25 - Repetir asociación de tarjeta",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/cards", "body": { "mode": "raw", "raw": "{\"cardNumber\":\"{{creditNumber}}\",\"type\":\"CREDIT\"}" } }
+        },
+        {
+          "name": "Caso 26 - Consultar tarjetas de cuenta ajena",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/cards/accounts/{{otherAccountId}}/cards" }
+        },
+        {
+          "name": "Caso 27 - Consultar tarjeta inexistente",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards/9223372036854775807" }
+        },
+        {
+          "name": "Caso 28 - Eliminar tarjeta de débito",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards/{{debitCardId}}" }
+        },
+        {
+          "name": "Caso 29 - Eliminar tarjeta de crédito",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards/{{creditCardId}}" }
+        },
+        {
+          "name": "Caso 30 - Consultar tarjeta eliminada",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards/{{creditCardId}}" }
         }
       ]
     }

@@ -6,8 +6,11 @@ import com.lautarorisso.users_service.dto.AccountResponse;
 import com.lautarorisso.users_service.dto.CreateAccountRequest;
 import com.lautarorisso.users_service.dto.RegisterRequest;
 import com.lautarorisso.users_service.dto.RegisterResponse;
+import com.lautarorisso.users_service.dto.UserProfileResponse;
 import com.lautarorisso.users_service.entity.RolEntity;
 import com.lautarorisso.users_service.entity.UserEntity;
+import com.lautarorisso.users_service.exception.ForbiddenException;
+import com.lautarorisso.users_service.exception.ResourceNotFoundException;
 import com.lautarorisso.users_service.exception.ServiceUnavailableException;
 import com.lautarorisso.users_service.exception.ValidationException;
 import com.lautarorisso.users_service.repository.RolRepository;
@@ -43,10 +46,10 @@ public class UserService {
         request.nombre(), request.apellido(), request.password());
     UserEntity user = userRepository.save(
         new UserEntity(request.nombre(), request.apellido(), request.dni(), request.email(), request.telefono(),
-            List.of(userRole)));
+            keycloakUserId, List.of(userRole)));
     AccountResponse account;
     try {
-      account = accountClient.createAccount(new CreateAccountRequest(user.getId()));
+      account = accountClient.createAccount(new CreateAccountRequest(user.getId(), keycloakUserId));
     } catch (RuntimeException ex) {
       rollbackRegistration(user, token, keycloakUserId);
       throw new ServiceUnavailableException(
@@ -54,6 +57,16 @@ public class UserService {
     }
     return new RegisterResponse(user.getId(), user.getNombre(), user.getApellido(),
         user.getDni(), user.getEmail(), user.getTelefono(), account.cvu(), account.alias());
+  }
+
+  public UserProfileResponse getProfile(Long userId, String subject) {
+    UserEntity user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    if (!subject.equals(user.getKeycloakSub())) {
+      throw new ForbiddenException("You do not have access to this user");
+    }
+    return new UserProfileResponse(user.getId(), user.getNombre(), user.getApellido(), user.getDni(),
+        user.getEmail(), user.getTelefono());
   }
 
   private void rollbackRegistration(UserEntity user, String keycloakToken, String keycloakUserId) {
