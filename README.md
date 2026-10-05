@@ -75,11 +75,14 @@ Se corre carpeta por carpeta, en este orden — cada request tiene aserciones au
 2. **Login** (4 requests): `POST /users-service/auth/login`
 3. **Logout** (3 requests): `POST /users-service/user/logout`
 
+Para Sprint 2, seleccionar el environment local y pulsar **Run** sobre la carpeta **Sprint 2** completa. Registra dos usuarios, inicia sesión y prepara sus datos automáticamente antes de ejecutar los 16 casos. No hace falta cargar credenciales ni IDs; ver la [planilla](docs/testing/sprint-2-testing-manual.md).
+
 > El primer request genera un email único por corrida, así que la colección se puede correr todas las veces que quieras sin repetir datos.
 
 ## Planilla de casos de prueba
 
 - [Planilla de casos de prueba (Sprint 1)](docs/testing/sprint-1-testing-manual.md)
+- [Planilla de casos de prueba (Sprint 2)](docs/testing/sprint-2-testing-manual.md)
 
 ## Notas
 
