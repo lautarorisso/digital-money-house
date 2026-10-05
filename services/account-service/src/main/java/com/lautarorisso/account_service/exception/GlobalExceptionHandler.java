@@ -67,6 +67,13 @@ public class GlobalExceptionHandler {
         "Not Found", ex.getMessage(), request.getRequestURI());
   }
 
+  @ExceptionHandler(ConflictException.class)
+  @ResponseStatus(HttpStatus.CONFLICT)
+  public ApiError handleConflict(ConflictException ex, HttpServletRequest request) {
+    return new ApiError(LocalDateTime.now(), HttpStatus.CONFLICT.value(),
+        "Conflict", ex.getMessage(), request.getRequestURI());
+  }
+
   @ExceptionHandler(NoResourceFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
   public ApiError handleNoResource(NoResourceFoundException ex, HttpServletRequest request) {

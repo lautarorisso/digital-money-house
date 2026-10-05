@@ -2,10 +2,14 @@ package com.lautarorisso.account_service.controller;
 
 import com.lautarorisso.account_service.dto.AccountResponse;
 import com.lautarorisso.account_service.dto.AccountDetailResponse;
+import com.lautarorisso.account_service.dto.CardResponse;
 import com.lautarorisso.account_service.dto.CreateAccountRequest;
+import com.lautarorisso.account_service.dto.CreateCardRequest;
 import com.lautarorisso.account_service.dto.TransactionResponse;
 import com.lautarorisso.account_service.service.AccountService;
+import com.lautarorisso.account_service.service.CardService;
 import com.lautarorisso.account_service.service.TransactionService;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AccountController {
 
   private final AccountService accountService;
+  private final CardService cardService;
   private final TransactionService transactionService;
 
   @PostMapping
@@ -46,5 +51,12 @@ public class AccountController {
   public List<TransactionResponse> getTransactions(@AuthenticationPrincipal Jwt jwt,
       @PathVariable("id") Long id) {
     return transactionService.getTransactions(id, jwt.getSubject());
+  }
+
+  @PostMapping("/{id}/cards")
+  @ResponseStatus(HttpStatus.CREATED)
+  public CardResponse associateCard(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") Long id,
+      @Valid @RequestBody CreateCardRequest request) {
+    return cardService.associateCard(id, jwt.getSubject(), request);
   }
 }

@@ -21,6 +21,10 @@ spring:
                 - Path=/accounts-service/**
               filters:
                 - RewritePath=/accounts-service/(?<segment>.*), /${segment}
+            - id: account-service-card-endpoints
+              uri: lb://account-service
+              predicates:
+                - Path=/cards,/accounts/*/cards
   security:
     oauth2:
       resourceserver:

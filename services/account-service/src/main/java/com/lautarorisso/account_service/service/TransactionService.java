@@ -2,9 +2,9 @@ package com.lautarorisso.account_service.service;
 
 import com.lautarorisso.account_service.dto.TransactionResponse;
 import com.lautarorisso.account_service.entity.AccountEntity;
-import com.lautarorisso.account_service.entity.TransactionEntity;
 import com.lautarorisso.account_service.exception.ForbiddenException;
 import com.lautarorisso.account_service.exception.ResourceNotFoundException;
+import com.lautarorisso.account_service.mapper.TransactionMapper;
 import com.lautarorisso.account_service.repository.AccountRepository;
 import com.lautarorisso.account_service.repository.TransactionRepository;
 import java.util.List;
@@ -18,6 +18,7 @@ public class TransactionService {
 
   private final AccountRepository accountRepository;
   private final TransactionRepository transactionRepository;
+  private final TransactionMapper transactionMapper;
 
   @Transactional(readOnly = true)
   public List<TransactionResponse> getTransactions(Long accountId, String subject) {
@@ -27,12 +28,7 @@ public class TransactionService {
       throw new ForbiddenException("You do not have access to this account");
     }
     return transactionRepository.findTop5ByAccountIdOrderByTransactionDateDescIdDesc(accountId).stream()
-        .map(this::toResponse)
+        .map(transactionMapper::toResponse)
         .toList();
-  }
-
-  private TransactionResponse toResponse(TransactionEntity transaction) {
-    return new TransactionResponse(transaction.getId(), transaction.getAmount(), transaction.getType(),
-        transaction.getDescription(), transaction.getTransactionDate(), transaction.getBalanceAfter());
   }
 }
