@@ -84,6 +84,16 @@ Para Sprint 2, seleccionar el environment local y pulsar **Run** sobre la carpet
 - [Planilla de casos de prueba (Sprint 1)](docs/testing/sprint-1-testing-manual.md)
 - [Planilla de casos de prueba (Sprint 2)](docs/testing/sprint-2-testing-manual.md)
 
+## Testing automatizado
+
+Con Java 21 y el stack Docker activo, ejecutar los 11 casos de humo de Sprint 2:
+
+```bash
+./mvnw -pl services/api-gateway -Dtest=Sprint2SmokeIT -Ddmh.baseUrl=http://localhost:8080 test
+```
+
+La suite registra e inicia sesión automáticamente; no requiere credenciales ni IDs. Los tests habituales siguen ejecutándose con `./mvnw test`.
+
 ## Notas
 
 - Los datos persisten en volúmenes Docker: se conservan con `docker compose down` y se borran solo con `docker compose down -v`.
