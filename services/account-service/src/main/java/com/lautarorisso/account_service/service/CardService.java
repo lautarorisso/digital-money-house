@@ -10,6 +10,7 @@ import com.lautarorisso.account_service.exception.ResourceNotFoundException;
 import com.lautarorisso.account_service.mapper.CardMapper;
 import com.lautarorisso.account_service.repository.AccountRepository;
 import com.lautarorisso.account_service.repository.CardRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,42 @@ public class CardService {
   private final CardRepository cardRepository;
   private final AccountRepository accountRepository;
   private final CardMapper cardMapper;
+
+  @Transactional(readOnly = true)
+  public List<CardResponse> getCardsByAccount(Long accountId, String subject) {
+    AccountEntity account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+    if (!subject.equals(account.getOwnerSub())) {
+      throw new ForbiddenException("You do not have access to this account");
+    }
+    return cardRepository.findByAccountIdOrderByIdAsc(accountId).stream()
+        .map(cardMapper::toResponse)
+        .toList();
+  }
+
+  @Transactional(readOnly = true)
+  public CardResponse getCardByAccount(Long accountId, Long cardId, String subject) {
+    AccountEntity account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+    if (!subject.equals(account.getOwnerSub())) {
+      throw new ForbiddenException("You do not have access to this account");
+    }
+    CardEntity card = cardRepository.findByIdAndAccountId(cardId, accountId)
+        .orElseThrow(() -> new ResourceNotFoundException("Card not found in this account"));
+    return cardMapper.toResponse(card);
+  }
+
+  @Transactional
+  public void deleteCard(Long accountId, Long cardId, String subject) {
+    AccountEntity account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+    if (!subject.equals(account.getOwnerSub())) {
+      throw new ForbiddenException("You do not have access to this account");
+    }
+    CardEntity card = cardRepository.findByIdAndAccountId(cardId, accountId)
+        .orElseThrow(() -> new ResourceNotFoundException("Card not found in this account"));
+    cardRepository.delete(card);
+  }
 
   @Transactional
   public CardResponse createCard(CreateCardRequest request) {

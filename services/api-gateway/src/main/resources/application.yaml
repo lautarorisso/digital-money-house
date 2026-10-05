@@ -24,7 +24,7 @@ spring:
             - id: account-service-card-endpoints
               uri: lb://account-service
               predicates:
-                - Path=/cards,/accounts/*/cards
+                - Path=/cards,/accounts/*/cards,/cards/accounts/*/cards,/cards/accounts/*/cards/*
   security:
     oauth2:
       resourceserver:
