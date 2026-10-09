@@ -2,8 +2,6 @@
 
 ## Inicio rápido
 
-El stack completo (API Gateway, service discovery, users-service, account-service, Keycloak y MySQL) se levanta con un solo comando de Docker.
-
 ### Requisitos
 
 - Docker
@@ -55,7 +53,7 @@ Listo para probar.
 | `8761` | service-discovery (Eureka) |
 | `8082` | account-service            |
 
-> Todo entra por el gateway (`8080`). `8082` (account-service) es solo de comunicación interna entre servicios; no se prueba desde afuera.
+> Todo entra por el gateway (`8080`).
 
 ## Probar los endpoints con Postman
 
