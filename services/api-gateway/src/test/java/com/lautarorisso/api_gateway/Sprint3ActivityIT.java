@@ -17,6 +17,7 @@ import io.restassured.path.json.config.JsonPathConfig.NumberReturnType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -46,6 +47,8 @@ class Sprint3ActivityIT {
   private Long debitCardId;
   private Long secondaryCardId;
   private Long creditTransferId;
+  private LocalDate firstDepositDate;
+  private LocalDate lastDepositDate;
   private BigDecimal expectedBalance = BigDecimal.ZERO;
   private final List<Long> transferIds = new ArrayList<>();
 
@@ -225,6 +228,92 @@ class Sprint3ActivityIT {
     assertAccountsUnchanged();
   }
 
+  @Test
+  @Order(15)
+  @DisplayName("Case 15 - Combined activity filters")
+  void case15CombinedFilters() {
+    request(primary).queryParams("from", firstDepositDate.toString(), "to", lastDepositDate.toString(),
+            "type", "CREDIT", "minAmount", 1000, "maxAmount", 5000)
+        .get("/accounts/{id}/activity", primary.id())
+        .then().statusCode(200).body("size()", equalTo(1))
+        .body("[0].id", equalTo(creditTransferId.intValue()));
+    request(primary).queryParams("type", "DEBIT", "minAmount", 1000, "maxAmount", 5000)
+        .get("/accounts/{id}/activity", primary.id())
+        .then().statusCode(200).body("", empty());
+  }
+
+  @Test
+  @Order(16)
+  @DisplayName("Case 16 - Inclusive calendar dates and optional bounds")
+  void case16InclusiveDates() {
+    List<Long> newestFirst = new ArrayList<>(transferIds);
+    Collections.reverse(newestFirst);
+    for (Map<String, String> bounds : List.of(
+        Map.of("from", firstDepositDate.toString(), "to", lastDepositDate.toString()),
+        Map.of("from", firstDepositDate.toString()), Map.of("to", lastDepositDate.toString()),
+        Map.of("to", "9999-12-31"))) {
+      Response activity = request(primary).queryParams(bounds).get("/accounts/{id}/activity", primary.id())
+          .then().statusCode(200).extract().response();
+      assertEquals(newestFirst, activity.jsonPath().getList("id", Long.class));
+    }
+    for (Map<String, String> bounds : List.of(
+        Map.of("to", firstDepositDate.minusDays(1).toString()),
+        Map.of("from", lastDepositDate.plusDays(1).toString()))) {
+      request(primary).queryParams(bounds).get("/accounts/{id}/activity", primary.id())
+          .then().statusCode(200).body("", empty());
+    }
+  }
+
+  @Test
+  @Order(17)
+  @DisplayName("Case 17 - Exclusive minimum, inclusive maximum and empty buckets")
+  void case17AmountBoundaries() {
+    request(primary).queryParam("minAmount", 250).get("/accounts/{id}/activity", primary.id())
+        .then().statusCode(200).body("size()", equalTo(1))
+        .body("[0].amount", comparesEqualTo(new BigDecimal("1000.50")));
+    request(primary).queryParam("maxAmount", 250).get("/accounts/{id}/activity", primary.id())
+        .then().statusCode(200).body("size()", equalTo(5))
+        .body("[4].amount", comparesEqualTo(new BigDecimal("250.00")));
+    request(primary).queryParams("minAmount", 0, "maxAmount", 1000)
+        .get("/accounts/{id}/activity", primary.id()).then().statusCode(200).body("size()", equalTo(5));
+    request(primary).queryParams("minAmount", 250, "maxAmount", 250)
+        .get("/accounts/{id}/activity", primary.id()).then().statusCode(200).body("", empty());
+    for (Map<String, Object> bounds : List.<Map<String, Object>>of(
+        Map.of("minAmount", 5000, "maxAmount", 20000),
+        Map.of("minAmount", 20000, "maxAmount", 100000), Map.of("minAmount", 100000),
+        Map.of("type", "DEBIT"))) {
+      request(primary).queryParams(bounds).get("/accounts/{id}/activity", primary.id())
+          .then().statusCode(200).body("", empty());
+    }
+  }
+
+  @Test
+  @Order(18)
+  @DisplayName("Case 18 - Invalid activity filters")
+  void case18InvalidFilters() {
+    for (Map<String, String> filters : List.of(
+        Map.of("from", "invalid"), Map.of("to", "2026-02-30"),
+        Map.of("from", "2026-10-09", "to", "2026-10-08"),
+        Map.of("to", LocalDate.MAX.toString()), Map.of("type", "UNKNOWN"),
+        Map.of("minAmount", "-1"), Map.of("maxAmount", "-1"),
+        Map.of("minAmount", "5000", "maxAmount", "1000"), Map.of("minAmount", "invalid"))) {
+      request(primary).queryParams(filters).get("/accounts/{id}/activity", primary.id())
+          .then().statusCode(400).body("status", equalTo(400));
+    }
+    assertAccountsUnchanged();
+  }
+
+  @Test
+  @Order(19)
+  @DisplayName("Case 19 - Filtered activity still requires ownership")
+  void case19ForeignFilteredActivity() {
+    request(primary).queryParams("from", firstDepositDate.toString(), "to", lastDepositDate.toString(),
+            "type", "DEBIT", "minAmount", 1000, "maxAmount", 5000)
+        .get("/accounts/{id}/activity", secondary.id())
+        .then().statusCode(403).body("status", equalTo(403),
+            "message", equalTo("You do not have access to this account"));
+  }
+
   @AfterAll
   void cleanUpCards() {
     deleteCard(primary, creditCardId);
@@ -268,6 +357,8 @@ class Sprint3ActivityIT {
         .post("/accounts/{id}/transferences", primary.id())
         .then().statusCode(201).extract().response();
     Long id = deposit.jsonPath().getLong("id");
+    lastDepositDate = LocalDateTime.parse(deposit.jsonPath().getString("transactionDate")).toLocalDate();
+    if (firstDepositDate == null) firstDepositDate = lastDepositDate;
     assertTrue(id != null && id > 0, "A deposit must return its transfer ID");
     transferIds.add(id);
     expectedBalance = expectedBalance.add(amount);
