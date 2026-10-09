@@ -77,4 +77,22 @@ public class UserEntity {
     this.keycloakSub = keycloakSub;
     this.roles = roles;
   }
+
+  public void updateProfile(String nombre, String apellido, Long dni, String email, String telefono) {
+    if (nombre != null) {
+      this.nombre = nombre;
+    }
+    if (apellido != null) {
+      this.apellido = apellido;
+    }
+    if (dni != null) {
+      this.dni = dni;
+    }
+    if (email != null) {
+      this.email = email;
+    }
+    if (telefono != null) {
+      this.telefono = telefono;
+    }
+  }
 }

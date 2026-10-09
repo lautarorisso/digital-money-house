@@ -1,21 +1,11 @@
 # Planilla de casos de prueba (Testing manual) — Sprint 2
 
-## Cómo ejecutar
-
-1. Levantar el proyecto con `docker compose up -d --build` y esperar que los servicios estén disponibles.
-2. Importar la colección y el environment local de `docs/postman/` en Postman.
-3. Seleccionar el environment y pulsar **Run** sobre la carpeta **Sprint 2** completa.
-
-Postman registra dos usuarios, inicia sesión y guarda los datos necesarios automáticamente. No hay que escribir credenciales ni IDs. La cuenta principal se usa para los casos; la segunda permite comprobar permisos. La preparación verifica las cuentas por CVU y alias antes de continuar; si no coinciden, detiene la ejecución.
-
 ## Resultado general
 
-- Total de casos: 16
-- Probados: 16/16
-- Fallidos: 0
-- Suite de Humo: casos 15–23 y 28–29 (11 casos)
-- Suite de Regresión: 16 casos
-- Los seis requests iniciales son preparación, no casos nuevos
+- Total de casos: 22
+- Aprobados: 21; fallidos: 1 (corregido tras el retest)
+- Suite de Humo: casos 15–23, 28–29 y 31–36 (17 casos)
+- Suite de Regresión: 22 casos
 
 ## Dashboard y perfil
 
@@ -43,6 +33,24 @@ Postman registra dos usuarios, inicia sesión y guarda los datos necesarios auto
 | Caso 29 | Eliminar tarjeta de crédito         | Tarjeta creada por la suite              | `DELETE /cards/accounts/{{accountId}}/cards/{{creditCardId}}`   | HTTP 200 sin cuerpo                           | HTTP 200 sin cuerpo                             | Aprobado | Humo y regresión |
 | Caso 30 | Consultar tarjeta eliminada         | Caso 29                                  | Volver a consultar la tarjeta de crédito                        | HTTP 404                                      | HTTP 404; eliminación confirmada                | Aprobado | Regresión        |
 
+## Actualización de perfil y alias
+
+| ID      | Caso de prueba                                           | Precondiciones                      | Pasos y datos                                                                                                                      | Resultado esperado                                                                            | Resultado obtenido                                                                                                                  | Estado                               | Suite            |
+| ------- | -------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------- |
+| Caso 31 | Actualizar perfil parcialmente y volver a iniciar sesión | Usuario Lautaro Risso autenticado   | `PATCH /users-service/users/{{userId}}` con email nuevo y password `NewPassw0rd!23`; login con ambos datos nuevos y GET del perfil | HTTP 201; campos omitidos intactos y sin password en respuesta; login 200 y cambio persistido | HTTP 400: `Identity provider rejected the user update as invalid`; login y GET posterior no ejecutados (corregido; retest aprobado) | Fallido (corregido; retest aprobado) | Humo y regresión |
+| Caso 32 | Rechazar perfil inválido o vacío                         | Usuario autenticado                 | PATCH propio con `email: invalid`, `password: 1`; repetir con `{}` y consultar perfil                                              | HTTP 400 en ambos; email sin cambios                                                          | HTTP 400 en ambos; GET 200 con email original                                                                                       | Aprobado                             | Humo y regresión |
+| Caso 33 | Actualizar usuario y cuenta inexistentes                 | Usuario autenticado                 | PATCH de usuario con `nombre: Lautaro` y de cuenta con `alias: lautaro.missing`, ID `9223372036854775807`                          | HTTP 404 en ambos                                                                             | HTTP 404 en ambos                                                                                                                   | Aprobado                             | Humo y regresión |
+| Caso 34 | Actualizar alias propio                                  | Cuenta principal verificada         | `PATCH /accounts-service/accounts/{{accountId}}` con alias único; GET de la cuenta                                                 | HTTP 201; alias persistido, CVU y saldo intactos                                              | HTTP 201; GET 200 con alias nuevo, mismo CVU y saldo cero                                                                           | Aprobado                             | Humo y regresión |
+| Caso 35 | Rechazar alias inválido o duplicado                      | Segunda cuenta verificada           | PATCH propio con alias ` ` y luego `{{otherAccountAlias}}`; GET de cuenta principal                                                | HTTP 400 en ambos; cuenta sin cambios                                                         | HTTP 400 en ambos; GET 200 con alias, CVU y saldo intactos                                                                          | Aprobado                             | Humo y regresión |
+| Caso 36 | Impedir actualización de recursos ajenos                 | Segunda cuenta y usuario preparados | Con token principal, PATCH de `{{otherUserId}}` y `{{otherAccountId}}`; consultar ambos con token secundario                       | HTTP 403 en ambos; recursos ajenos sin cambios                                                | HTTP 403 en ambos; nombre y alias ajenos sin cambios                                                                                | Aprobado                             | Humo y regresión |
+
 ## Suite y mantenimiento
 
-La carpeta **Sprint 2** contiene la preparación y estos 16 casos, en orden. Captura tokens e IDs y elimina las tarjetas al finalizar. Cada ejecución crea usuarios y números de tarjeta nuevos, por lo que no depende de la ejecución de Sprint 1.
+La carpeta **Sprint 2** contiene la preparación y estos 22 casos, en orden. Captura tokens e IDs y elimina las tarjetas antes de los PATCH. Cada ejecución crea usuarios y números de tarjeta nuevos, por lo que no depende de la ejecución de Sprint 1. Los usuarios y cuentas de prueba permanecen en la base.
+
+## Solución del test fallido
+
+- **Resultado esperado (caso 31):** PATCH HTTP 201 con email y contraseña nuevos, campos omitidos intactos y sin contraseña en la respuesta; login HTTP 200 con las credenciales nuevas y GET HTTP 200 con el cambio persistido.
+- **Resultado obtenido inicialmente:** HTTP 400, `Identity provider rejected the user update as invalid`; el login y el GET posterior no se ejecutaron.
+- **Por qué fallaba:** `KeycloakClient.updateUser` enviaba el email nuevo también como username, el cambio intentaba modificar el username de solo lectura.
+- **Cómo se corrigió:** se dejó de enviar `username` al actualizar el usuario, conservando su valor y actualizando email, nombre, apellido y contraseña. Se retiró el parámetro username de `KeycloakClient.updateUser` y su argumento en `UserService.updateProfile`.

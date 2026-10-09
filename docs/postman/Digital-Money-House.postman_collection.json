@@ -464,14 +464,15 @@
     },
     {
       "name": "Sprint 2",
-      "description": "Ejecutar esta carpeta completa con Run. Los primeros seis requests preparan dos usuarios nuevos y verifican sus cuentas. Luego se ejecutan los 16 casos, con saldo cero y sin movimientos. Las tarjetas se eliminan al finalizar. Si los IDs de cuenta y usuario no coinciden, la comprobación de CVU/alias detiene la ejecución sin probar contra otra cuenta.",
+      "description": "Ejecutar esta carpeta completa con Run. Los primeros seis requests preparan dos usuarios nuevos y verifican sus cuentas. Luego se ejecutan los 22 casos, con saldo cero y sin movimientos. Los PATCH y sus comprobaciones quedan al final; se actualizan las credenciales antes del nuevo login. Las tarjetas se eliminan. Si los IDs de cuenta y usuario no coinciden, la comprobación de CVU/alias detiene la ejecución sin probar contra otra cuenta.",
       "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "const match = pm.info.requestName.match(/^Caso (\\d+)/);",
         "if (match) {",
         "const number = Number(match[1]);",
-        "const expected = {15:200,16:200,17:200,18:200,19:201,20:201,21:201,22:200,23:200,24:400,25:409,26:403,27:404,28:200,29:200,30:404};",
-        "pm.test('Estado HTTP esperado', () => pm.expect(pm.response.code).to.eql(expected[number]));",
+        "const expected = {15:200,16:200,17:200,18:200,19:201,20:201,21:201,22:200,23:200,24:400,25:409,26:403,27:404,28:200,29:200,30:404,31:201,32:400,33:404,34:201,35:400,36:403};",
+        "if (number >= 31 && pm.request.method !== 'PATCH') expected[number] = 200;",
+        "pm.test('Estado HTTP esperado', () => pm.expect(pm.response.code, pm.response.text()).to.eql(expected[number]));",
         "if ([28,29].includes(number)) {",
         "  pm.test('Eliminación sin cuerpo', () => pm.expect(pm.response.text()).to.eql(''));",
         "} else if (expected[number] >= 400) {",
@@ -486,13 +487,16 @@
       "item": [
         {
           "name": "Preparación - Registrar usuario principal",
-          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Juan\",\"apellido\":\"Perez\",\"dni\":30111223,\"email\":\"{{email}}\",\"telefono\":\"+541155551234\",\"password\":\"{{password}}\"}" } },
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Lautaro\",\"apellido\":\"Risso\",\"dni\":30111223,\"email\":\"{{email}}\",\"telefono\":\"+541155551234\",\"password\":\"{{password}}\"}" } },
           "event": [
             { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
               "const run = pm.variables.replaceIn('{{$guid}}');",
               "pm.environment.set('email', 'sprint2-a-' + run + '@dmh.test');",
               "pm.environment.set('otherEmail', 'sprint2-b-' + run + '@dmh.test');",
               "pm.environment.set('password', 'Passw0rd!23');",
+              "pm.environment.set('updatedEmail', 'lautaro-patch-' + run + '@dmh.test');",
+              "pm.environment.set('updatedPassword', 'NewPassw0rd!23');",
+              "pm.environment.set('updatedAlias', 'lautaro.' + run);",
               "pm.environment.set('creditNumber', Date.now().toString() + '001');",
               "pm.environment.set('debitNumber', Date.now().toString() + '002');",
               "['userId','accountId','otherAccountId','accessToken','refreshToken','otherAccessToken','creditCardId','debitCardId','accountCvu','accountAlias','otherAccountCvu','otherAccountAlias'].forEach(key => pm.environment.unset(key));"
@@ -511,12 +515,13 @@
         },
         {
           "name": "Preparación - Registrar segundo usuario",
-          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Ana\",\"apellido\":\"Perez\",\"dni\":30111224,\"email\":\"{{otherEmail}}\",\"telefono\":\"+541155551235\",\"password\":\"{{password}}\"}" } },
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Lautaro\",\"apellido\":\"Risso\",\"dni\":30111224,\"email\":\"{{otherEmail}}\",\"telefono\":\"+541155551235\",\"password\":\"{{password}}\"}" } },
           "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
             "pm.test('Segundo usuario registrado', () => pm.expect(pm.response.code).to.eql(201));",
             "if (pm.response.code !== 201) { pm.execution.setNextRequest(null); } else {",
             "  const user = pm.response.json();",
-            "  pm.environment.set('otherAccountId', user.id);",
+              "  pm.environment.set('otherAccountId', user.id);",
+              "  pm.environment.set('otherUserId', user.id);",
             "  pm.environment.set('otherAccountCvu', user.cvu);",
             "  pm.environment.set('otherAccountAlias', user.alias);",
             "}"
@@ -681,6 +686,81 @@
         {
           "name": "Caso 30 - Consultar tarjeta eliminada",
           "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards/{{creditCardId}}" }
+        },
+        {
+          "name": "Caso 31 - Actualizar email y password parcialmente",
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/{{userId}}", "body": { "mode": "raw", "raw": "{\"email\":\"{{updatedEmail}}\",\"password\":\"{{updatedPassword}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Perfil parcial conserva los campos omitidos y no expone password', () => pm.expect(pm.response.json()).to.eql({id:Number(pm.environment.get('userId')),nombre:'Lautaro',apellido:'Risso',dni:30111223,email:pm.environment.get('updatedEmail'),telefono:'+541155551234'}));",
+            "if (pm.response.code === 201) { pm.environment.set('email', pm.environment.get('updatedEmail')); pm.environment.set('password', pm.environment.get('updatedPassword')); } else { pm.execution.setNextRequest('Caso 32 - Email y password invalidos'); }"
+          ] } }]
+        },
+        {
+          "name": "Caso 31 - Login con credenciales nuevas",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"{{email}}\",\"password\":\"{{password}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const login = pm.response.json();",
+            "pm.test('Nuevo token disponible', () => pm.expect(login.accessToken).to.be.a('string').and.not.empty);",
+            "if (pm.response.code === 200 && login.accessToken) { pm.environment.set('accessToken', login.accessToken); pm.environment.set('refreshToken', login.refreshToken); } else { pm.execution.setNextRequest(null); }"
+          ] } }]
+        },
+        {
+          "name": "Caso 31 - Verificar perfil persistido",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/users-service/users/{{userId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Perfil persistido con campos omitidos intactos', () => pm.expect(pm.response.json()).to.eql({id:Number(pm.environment.get('userId')),nombre:'Lautaro',apellido:'Risso',dni:30111223,email:pm.environment.get('email'),telefono:'+541155551234'}));"
+          ] } }]
+        },
+        { "name": "Caso 32 - Email y password invalidos", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/{{userId}}", "body": { "mode": "raw", "raw": "{\"email\":\"invalid\",\"password\":\"1\"}" } } },
+        { "name": "Caso 32 - Perfil vacio", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/{{userId}}", "body": { "mode": "raw", "raw": "{}" } } },
+        {
+          "name": "Caso 32 - Verificar email tras rechazos",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/users-service/users/{{userId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Email sin cambios', () => pm.expect(pm.response.json().email).to.eql(pm.environment.get('email')));"
+          ] } }]
+        },
+        { "name": "Caso 33 - Usuario inexistente", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/9223372036854775807", "body": { "mode": "raw", "raw": "{\"nombre\":\"Lautaro\"}" } } },
+        { "name": "Caso 33 - Cuenta inexistente", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts-service/accounts/9223372036854775807", "body": { "mode": "raw", "raw": "{\"alias\":\"lautaro.missing\"}" } } },
+        {
+          "name": "Caso 34 - Actualizar alias",
+          "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts-service/accounts/{{accountId}}", "body": { "mode": "raw", "raw": "{\"alias\":\"{{updatedAlias}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Alias actualizado sin cambiar CVU ni saldo', () => pm.expect(pm.response.json()).to.eql({id:Number(pm.environment.get('accountId')),cvu:pm.environment.get('accountCvu'),alias:pm.environment.get('updatedAlias'),balance:0}));",
+            "if (pm.response.code === 201) pm.environment.set('accountAlias', pm.environment.get('updatedAlias'));"
+          ] } }]
+        },
+        {
+          "name": "Caso 34 - Verificar alias persistido",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{accountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Cuenta persistida sin cambiar CVU ni saldo', () => pm.expect(pm.response.json()).to.eql({id:Number(pm.environment.get('accountId')),cvu:pm.environment.get('accountCvu'),alias:pm.environment.get('accountAlias'),balance:0}));"
+          ] } }]
+        },
+        { "name": "Caso 35 - Alias en blanco", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts-service/accounts/{{accountId}}", "body": { "mode": "raw", "raw": "{\"alias\":\" \"}" } } },
+        { "name": "Caso 35 - Alias duplicado", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts-service/accounts/{{accountId}}", "body": { "mode": "raw", "raw": "{\"alias\":\"{{otherAccountAlias}}\"}" } } },
+        {
+          "name": "Caso 35 - Verificar cuenta tras rechazos",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{accountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Cuenta sin cambios tras rechazos', () => pm.expect(pm.response.json()).to.eql({id:Number(pm.environment.get('accountId')),cvu:pm.environment.get('accountCvu'),alias:pm.environment.get('accountAlias'),balance:0}));"
+          ] } }]
+        },
+        { "name": "Caso 36 - Actualizar perfil ajeno", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/{{otherUserId}}", "body": { "mode": "raw", "raw": "{\"nombre\":\"Changed\"}" } } },
+        { "name": "Caso 36 - Actualizar cuenta ajena", "request": { "method": "PATCH", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts-service/accounts/{{otherAccountId}}", "body": { "mode": "raw", "raw": "{\"alias\":\"changed.alias\"}" } } },
+        {
+          "name": "Caso 36 - Verificar perfil ajeno sin cambios",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{otherAccessToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/users-service/users/{{otherUserId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Nombre ajeno sin cambios', () => pm.expect(pm.response.json().nombre).to.eql('Lautaro'));"
+          ] } }]
+        },
+        {
+          "name": "Caso 36 - Verificar alias ajeno sin cambios",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{otherAccessToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{otherAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Alias ajeno sin cambios', () => pm.expect(pm.response.json().alias).to.eql(pm.environment.get('otherAccountAlias')));"
+          ] } }]
         }
       ]
     }

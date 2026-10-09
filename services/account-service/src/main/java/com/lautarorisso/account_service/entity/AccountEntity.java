@@ -49,4 +49,8 @@ public class AccountEntity {
     this.balance = BigDecimal.ZERO;
     this.ownerSub = ownerSub;
   }
+
+  public void updateAlias(String alias) {
+    this.alias = alias;
+  }
 }

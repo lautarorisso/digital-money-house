@@ -90,6 +90,39 @@ public class KeycloakClient {
     }
   }
 
+  public void updateUser(String token, String userId, String email, String firstName,
+      String lastName, String password) {
+    java.util.Map<String, Object> payload = new java.util.LinkedHashMap<>();
+    // Preserve the read-only username; this realm allows login with the updated email.
+    payload.put("email", email);
+    payload.put("firstName", firstName);
+    payload.put("lastName", lastName);
+    if (password != null) {
+      payload.put("credentials", List.of(new KeycloakUserRequest.Credential("password", password, false)));
+    }
+    try {
+      restClient.put()
+          .uri(baseUrl + "/admin/realms/" + realm + "/users/" + userId)
+          .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+          .contentType(MediaType.APPLICATION_JSON)
+          .body(payload)
+          .retrieve()
+          .toBodilessEntity();
+    } catch (HttpClientErrorException.Conflict e) {
+      throw new ValidationException("Email is already registered in the identity provider");
+    } catch (HttpClientErrorException.BadRequest e) {
+      throw new ValidationException("Identity provider rejected the user update as invalid");
+    } catch (HttpClientErrorException e) {
+      throw new ServiceUnavailableException(
+          "Identity provider failed during user update (" + e.getStatusCode().value() + ")", e);
+    } catch (HttpServerErrorException e) {
+      throw new ServiceUnavailableException(
+          "Identity provider failed during user update (" + e.getStatusCode().value() + ")", e);
+    } catch (ResourceAccessException e) {
+      throw new ServiceUnavailableException("Identity provider unavailable during user update", e);
+    }
+  }
+
   private String translateBadRequest(HttpClientErrorException.BadRequest ex) {
     try {
       JsonNode body = ex.getResponseBodyAs(JsonNode.class);
