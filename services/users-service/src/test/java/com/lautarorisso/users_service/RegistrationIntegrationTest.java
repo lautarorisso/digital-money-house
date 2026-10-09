@@ -35,10 +35,14 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 class RegistrationIntegrationTest {
 
-  @Autowired MockMvc mockMvc;
-  @Autowired UserRepository userRepository;
-  @MockitoBean KeycloakClient keycloakClient;
-  @MockitoBean AccountClient accountClient;
+  @Autowired
+  MockMvc mockMvc;
+  @Autowired
+  UserRepository userRepository;
+  @MockitoBean
+  KeycloakClient keycloakClient;
+  @MockitoBean
+  AccountClient accountClient;
 
   @Test
   void registerPersistsUserThroughTheApi() throws Exception {
@@ -48,16 +52,16 @@ class RegistrationIntegrationTest {
         .thenReturn(new AccountResponse(7L, 1L, "1234567890123456789012", "casa.rio.sol"));
 
     mockMvc.perform(post("/users/register")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content("""
-                {"nombre":"Ada","apellido":"Lovelace","dni":12345678,
-                 "email":"ada@example.com","telefono":"+541112345678","password":"securePass1"}
-                """))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content("""
+            {"nombre":"Lautaro","apellido":"Risso","dni":12345678,
+             "email":"lautaro@example.com","telefono":"+541112345678","password":"securePass1"}
+            """))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.cvu").value("1234567890123456789012"))
         .andExpect(jsonPath("$.alias").value("casa.rio.sol"));
 
-    org.junit.jupiter.api.Assertions.assertTrue(userRepository.existsByEmail("ada@example.com"));
+    org.junit.jupiter.api.Assertions.assertTrue(userRepository.existsByEmail("lautaro@example.com"));
   }
 }

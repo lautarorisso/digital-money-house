@@ -11,6 +11,7 @@ import com.lautarorisso.account_service.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
@@ -54,5 +55,21 @@ public class AccountService {
     AccountEntity account = accountRepository.save(
         new AccountEntity(userId, cvuGenerator.generate(), aliasGenerator.generate(), ownerSub));
     return new AccountResponse(account.getId(), account.getUserId(), account.getCvu(), account.getAlias());
+  }
+
+  @Transactional
+  public AccountDetailResponse updateAlias(Long accountId, String subject, String alias) {
+    AccountEntity account = accountRepository.findById(accountId)
+        .orElseThrow(() -> new ResourceNotFoundException("Account not found"));
+    if (!subject.equals(account.getOwnerSub())) {
+      throw new ForbiddenException("You do not have access to this account");
+    }
+    account.updateAlias(alias);
+    try {
+      accountRepository.saveAndFlush(account);
+    } catch (DataIntegrityViolationException ex) {
+      throw new ValidationException("Alias is already registered");
+    }
+    return new AccountDetailResponse(account.getId(), account.getCvu(), account.getAlias(), account.getBalance());
   }
 }

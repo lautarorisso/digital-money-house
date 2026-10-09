@@ -12,6 +12,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -49,8 +50,10 @@ public class GlobalExceptionHandler {
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public ApiError handlePathVariableTypeMismatch(MethodArgumentTypeMismatchException ex,
       HttpServletRequest request) {
+    String message = ex.getParameter().hasParameterAnnotation(RequestParam.class)
+        ? "Invalid query parameter: " + ex.getName() : "Invalid path parameter";
     return new ApiError(LocalDateTime.now(), HttpStatus.BAD_REQUEST.value(),
-        "Bad Request", "Invalid path parameter", request.getRequestURI());
+        "Bad Request", message, request.getRequestURI());
   }
 
   @ExceptionHandler(ForbiddenException.class)

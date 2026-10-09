@@ -5,22 +5,29 @@ import com.lautarorisso.account_service.dto.AccountDetailResponse;
 import com.lautarorisso.account_service.dto.CardResponse;
 import com.lautarorisso.account_service.dto.CreateAccountRequest;
 import com.lautarorisso.account_service.dto.CreateCardRequest;
+import com.lautarorisso.account_service.dto.CreateTransferenceRequest;
 import com.lautarorisso.account_service.dto.TransactionResponse;
+import com.lautarorisso.account_service.dto.UpdateAccountRequest;
 import com.lautarorisso.account_service.service.AccountService;
 import com.lautarorisso.account_service.service.CardService;
 import com.lautarorisso.account_service.service.TransactionService;
 import jakarta.validation.Valid;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -51,6 +58,37 @@ public class AccountController {
   public List<TransactionResponse> getTransactions(@AuthenticationPrincipal Jwt jwt,
       @PathVariable("id") Long id) {
     return transactionService.getTransactions(id, jwt.getSubject());
+  }
+
+  @PatchMapping("/{id}")
+  @ResponseStatus(HttpStatus.CREATED)
+  public AccountDetailResponse updateById(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") Long id,
+      @Valid @RequestBody UpdateAccountRequest request) {
+    return accountService.updateAlias(id, jwt.getSubject(), request.alias());
+  }
+
+  @GetMapping("/{id}/activity")
+  public List<TransactionResponse> getActivity(@AuthenticationPrincipal Jwt jwt,
+      @PathVariable("id") Long id,
+      @RequestParam(name = "from", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+      @RequestParam(name = "to", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+      @RequestParam(name = "type", required = false) String type,
+      @RequestParam(name = "minAmount", required = false) BigDecimal minAmount,
+      @RequestParam(name = "maxAmount", required = false) BigDecimal maxAmount) {
+    return transactionService.getActivity(id, jwt.getSubject(), from, to, type, minAmount, maxAmount);
+  }
+
+  @GetMapping("/{accountId}/activity/{transferId}")
+  public TransactionResponse getActivityDetail(@AuthenticationPrincipal Jwt jwt,
+      @PathVariable("accountId") Long accountId, @PathVariable("transferId") Long transferId) {
+    return transactionService.getActivityDetail(accountId, transferId, jwt.getSubject());
+  }
+
+  @PostMapping("/{id}/transferences")
+  @ResponseStatus(HttpStatus.CREATED)
+  public TransactionResponse createTransference(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") Long id,
+      @Valid @RequestBody CreateTransferenceRequest request) {
+    return transactionService.createTransference(id, jwt.getSubject(), request);
   }
 
   @PostMapping("/{id}/cards")

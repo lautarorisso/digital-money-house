@@ -42,6 +42,10 @@ class Sprint2SmokeIT {
   private String debitNumber;
   private Long creditCardId;
   private Long debitCardId;
+  private Long otherUserId;
+  private Long otherAccountId;
+  private String otherToken;
+  private String otherAlias;
 
   @BeforeAll
   void registerAndLogin() {
@@ -59,7 +63,7 @@ class Sprint2SmokeIT {
     debitNumber = numberPrefix + "002";
 
     Response registered = given().spec(api)
-        .body(Map.of("nombre", "Juan", "apellido", "Perez", "dni", 30111223,
+        .body(Map.of("nombre", "Lautaro", "apellido", "Risso", "dni", 30111223,
             "email", email, "telefono", "+541155551234", "password", password))
         .post("/users-service/users/register")
         .then().statusCode(201).extract().response();
@@ -105,7 +109,7 @@ class Sprint2SmokeIT {
   void case17UserProfile() {
     Response profile = request().get("/users-service/users/{id}", userId)
         .then().statusCode(200).contentType(ContentType.JSON)
-        .body("nombre", equalTo("Juan"), "apellido", equalTo("Perez"),
+        .body("nombre", equalTo("Lautaro"), "apellido", equalTo("Risso"),
             "dni", equalTo(30111223), "email", equalTo(email), "telefono", equalTo("+541155551234"))
         .body("keySet()", hasItems("id", "nombre", "apellido", "dni", "email", "telefono"))
         .body("size()", equalTo(6))
@@ -201,6 +205,107 @@ class Sprint2SmokeIT {
     creditCardId = null;
     request().get("/cards/accounts/{id}/cards", accountId)
         .then().statusCode(200).body("", empty());
+  }
+
+  @Test
+  @Order(31)
+  @DisplayName("Case 31 - Partial profile update and login with new credentials")
+  void case31UpdateProfile() {
+    String newEmail = "lautaro-patch-" + UUID.randomUUID() + "@dmh.test";
+    String newPassword = "NewPassw0rd!23";
+    request().body(Map.of("email", newEmail, "password", newPassword))
+        .patch("/users-service/users/{id}", userId)
+        .then().log().ifValidationFails().statusCode(201)
+        .body("email", equalTo(newEmail), "nombre", equalTo("Lautaro"),
+            "apellido", equalTo("Risso"), "dni", equalTo(30111223),
+            "telefono", equalTo("+541155551234"), "size()", equalTo(6));
+    email = newEmail;
+    accessToken = given().spec(api).body(Map.of("email", email, "password", newPassword))
+        .post("/users-service/auth/login")
+        .then().statusCode(200).extract().path("accessToken");
+    assertTrue(accessToken != null && !accessToken.isBlank());
+    request().get("/users-service/users/{id}", userId)
+        .then().statusCode(200).body("email", equalTo(email), "nombre", equalTo("Lautaro"),
+            "apellido", equalTo("Risso"), "dni", equalTo(30111223),
+            "telefono", equalTo("+541155551234"), "size()", equalTo(6));
+  }
+
+  @Test
+  @Order(32)
+  @DisplayName("Case 32 - Invalid and empty profile updates")
+  void case32InvalidProfile() {
+    for (Map<String, ?> body : List.<Map<String, ?>>of(Map.of("email", "invalid", "password", "1"), Map.of())) {
+      request().body(body).patch("/users-service/users/{id}", userId)
+          .then().statusCode(400).body("status", equalTo(400));
+    }
+    request().get("/users-service/users/{id}", userId)
+        .then().statusCode(200).body("email", equalTo(email));
+  }
+
+  @Test
+  @Order(33)
+  @DisplayName("Case 33 - Update missing user and account")
+  void case33MissingResources() {
+    request().body(Map.of("nombre", "Lautaro"))
+        .patch("/users-service/users/{id}", Long.MAX_VALUE)
+        .then().statusCode(404).body("status", equalTo(404));
+    request().body(Map.of("alias", "lautaro.missing"))
+        .patch("/accounts-service/accounts/{id}", Long.MAX_VALUE)
+        .then().statusCode(404).body("status", equalTo(404));
+  }
+
+  @Test
+  @Order(34)
+  @DisplayName("Case 34 - Update alias without changing CVU or balance")
+  void case34UpdateAlias() {
+    alias = "lautaro." + UUID.randomUUID();
+    request().body(Map.of("alias", alias)).patch("/accounts-service/accounts/{id}", accountId)
+        .then().statusCode(201).body("alias", equalTo(alias), "cvu", equalTo(cvu),
+            "balance", equalTo(0.0f));
+    request().get("/accounts-service/accounts/{id}", accountId)
+        .then().statusCode(200).body("alias", equalTo(alias), "cvu", equalTo(cvu),
+            "balance", equalTo(0.0f));
+  }
+
+  @Test
+  @Order(35)
+  @DisplayName("Case 35 - Blank and duplicate aliases")
+  void case35InvalidAlias() {
+    String otherEmail = "lautaro-other-" + UUID.randomUUID() + "@dmh.test";
+    Response registered = given().spec(api)
+        .body(Map.of("nombre", "Lautaro", "apellido", "Risso", "dni", 30111224,
+            "email", otherEmail, "telefono", "+541155551235", "password", "Passw0rd!23"))
+        .post("/users-service/users/register").then().statusCode(201).extract().response();
+    otherUserId = registered.jsonPath().getLong("id");
+    otherAlias = registered.jsonPath().getString("alias");
+    otherToken = given().spec(api).body(Map.of("email", otherEmail, "password", "Passw0rd!23"))
+        .post("/users-service/auth/login").then().statusCode(200).extract().path("accessToken");
+    Response account = given().spec(api).auth().oauth2(otherToken)
+        .get("/accounts-service/accounts/{id}", otherUserId)
+        .then().statusCode(200).body("cvu", equalTo(registered.jsonPath().getString("cvu")),
+            "alias", equalTo(otherAlias)).extract().response();
+    otherAccountId = account.jsonPath().getLong("id");
+    for (String invalidAlias : List.of(" ", otherAlias)) {
+      request().body(Map.of("alias", invalidAlias)).patch("/accounts-service/accounts/{id}", accountId)
+          .then().statusCode(400).body("status", equalTo(400));
+    }
+    request().get("/accounts-service/accounts/{id}", accountId)
+        .then().statusCode(200).body("alias", equalTo(alias), "cvu", equalTo(cvu),
+            "balance", equalTo(0.0f));
+  }
+
+  @Test
+  @Order(36)
+  @DisplayName("Case 36 - Cannot update another user's profile or account")
+  void case36Ownership() {
+    request().body(Map.of("nombre", "Changed")).patch("/users-service/users/{id}", otherUserId)
+        .then().statusCode(403).body("status", equalTo(403));
+    request().body(Map.of("alias", "changed.alias")).patch("/accounts-service/accounts/{id}", otherAccountId)
+        .then().statusCode(403).body("status", equalTo(403));
+    given().spec(api).auth().oauth2(otherToken).get("/users-service/users/{id}", otherUserId)
+        .then().statusCode(200).body("nombre", equalTo("Lautaro"));
+    given().spec(api).auth().oauth2(otherToken).get("/accounts-service/accounts/{id}", otherAccountId)
+        .then().statusCode(200).body("alias", equalTo(otherAlias));
   }
 
   @AfterAll
