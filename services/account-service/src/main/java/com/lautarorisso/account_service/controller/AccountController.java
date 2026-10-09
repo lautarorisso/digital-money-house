@@ -5,6 +5,7 @@ import com.lautarorisso.account_service.dto.AccountDetailResponse;
 import com.lautarorisso.account_service.dto.CardResponse;
 import com.lautarorisso.account_service.dto.CreateAccountRequest;
 import com.lautarorisso.account_service.dto.CreateCardRequest;
+import com.lautarorisso.account_service.dto.CreateTransferenceRequest;
 import com.lautarorisso.account_service.dto.TransactionResponse;
 import com.lautarorisso.account_service.dto.UpdateAccountRequest;
 import com.lautarorisso.account_service.service.AccountService;
@@ -60,6 +61,25 @@ public class AccountController {
   public AccountDetailResponse updateById(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") Long id,
       @Valid @RequestBody UpdateAccountRequest request) {
     return accountService.updateAlias(id, jwt.getSubject(), request.alias());
+  }
+
+  @GetMapping("/{id}/activity")
+  public List<TransactionResponse> getActivity(@AuthenticationPrincipal Jwt jwt,
+      @PathVariable("id") Long id) {
+    return transactionService.getActivity(id, jwt.getSubject());
+  }
+
+  @GetMapping("/{accountId}/activity/{transferId}")
+  public TransactionResponse getActivityDetail(@AuthenticationPrincipal Jwt jwt,
+      @PathVariable("accountId") Long accountId, @PathVariable("transferId") Long transferId) {
+    return transactionService.getActivityDetail(accountId, transferId, jwt.getSubject());
+  }
+
+  @PostMapping("/{id}/transferences")
+  @ResponseStatus(HttpStatus.CREATED)
+  public TransactionResponse createTransference(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") Long id,
+      @Valid @RequestBody CreateTransferenceRequest request) {
+    return transactionService.createTransference(id, jwt.getSubject(), request);
   }
 
   @PostMapping("/{id}/cards")
