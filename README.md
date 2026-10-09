@@ -24,11 +24,11 @@ El stack completo (API Gateway, service discovery, users-service, account-servic
    cp .env.example .env
    ```
 
-   | Variable                                 | Qué es                                                                   | De dónde la sacás                                                                                                                                           |
-   | ---------------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | `KEYCLOAK_ADMIN_PASSWORD`                | Contraseña para entrar a la consola de admin de Keycloak                 | La elegís vos                                                                                                                                               |
-   | `KEYCLOAK_BACKEND_CLIENT_SECRET`         | Secreto compartido entre Keycloak y el backend (debe ser igual en ambos) | Se genera con `openssl rand -hex 32` en la terminal y se pega el resultado                                                                                  |
-   | `MYSQL_ROOT_PASSWORD` / `MYSQL_PASSWORD` | Contraseñas de la base de datos MySQL                                    | Las elegís vos                                                                                                                                              |
+   | Variable                                 | Qué es                                                                   | De dónde la sacás                                                          |
+   | ---------------------------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+   | `KEYCLOAK_ADMIN_PASSWORD`                | Contraseña para entrar a la consola de admin de Keycloak                 | La elegís vos                                                              |
+   | `KEYCLOAK_BACKEND_CLIENT_SECRET`         | Secreto compartido entre Keycloak y el backend (debe ser igual en ambos) | Se genera con `openssl rand -hex 32` en la terminal y se pega el resultado |
+   | `MYSQL_ROOT_PASSWORD` / `MYSQL_PASSWORD` | Contraseñas de la base de datos MySQL                                    | Las elegís vos                                                             |
 
 3. Levantar todo el stack:
 
@@ -67,17 +67,7 @@ Listo para probar.
    - `Digital-Money-House.postman_environment.json`
 3. Elegir el environment "Digital Money House — Local" (ya trae `baseUrl = http://localhost:8080`).
 
-### Orden de ejecución
-
-Se corre carpeta por carpeta, en este orden — cada request tiene aserciones automáticas, así que el resultado se ve en el test (verde si pasa, rojo si falla):
-
-1. **Registro** (7 requests): `POST /users-service/users/register`
-2. **Login** (4 requests): `POST /users-service/auth/login`
-3. **Logout** (3 requests): `POST /users-service/user/logout`
-
-Para Sprint 2, seleccionar el environment local y pulsar **Run** sobre la carpeta **Sprint 2** completa. Registra dos usuarios, inicia sesión y prepara sus datos automáticamente antes de ejecutar los 16 casos. No hace falta cargar credenciales ni IDs; ver la [planilla](docs/testing/sprint-2-testing-manual.md).
-
-> El primer request genera un email único por corrida, así que la colección se puede correr todas las veces que quieras sin repetir datos.
+La colección incluye las carpetas **Registro**, **Login** y **Logout** (Sprint 1), **Sprint 2** y **Sprint 3**. Para Sprint 1, ejecutar Registro → Login → Logout. Para Sprint 2 o 3, seleccionar directamente la carpeta correspondiente y pulsar **Run**; cada una prepara sus propios datos automáticamente.
 
 ## Planilla de casos de prueba
 
@@ -86,10 +76,16 @@ Para Sprint 2, seleccionar el environment local y pulsar **Run** sobre la carpet
 
 ## Testing automatizado
 
-Con Java 21 y el stack Docker activo, ejecutar los 11 casos de humo de Sprint 2:
+Sprint 2:
 
 ```bash
 ./mvnw -pl services/api-gateway -Dtest=Sprint2SmokeIT -Ddmh.baseUrl=http://localhost:8080 test
+```
+
+Sprint 3:
+
+```bash
+./mvnw -pl services/api-gateway -Dtest=Sprint3ActivityIT -Ddmh.baseUrl=http://localhost:8080 test
 ```
 
 La suite registra e inicia sesión automáticamente; no requiere credenciales ni IDs. Los tests habituales siguen ejecutándose con `./mvnw test`.
