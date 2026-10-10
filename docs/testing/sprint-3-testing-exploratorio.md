@@ -112,58 +112,40 @@ Se realizó testing exploratorio sobre:
 **Resultado esperado:** HTTP 403 sin modificar la cuenta ajena.
 **Resultado obtenido:** HTTP 403.
 
-## Filtros opcionales de actividad
-
-Los casos 1 a 14 conservan sus resultados originales. Los casos 15 a 19 se ejecutaron el 2026-10-09 con la carpeta nativa Sprint 3 de Postman contra gateway, account-service y MySQL. La nueva ejecución preparó las cuentas 36 y 37 y reutilizó los ingresos de 1000.50, 250.00 y cuatro de 0.25.
-
-`GET /accounts/{id}/activity` admite `from` y `to` en formato ISO `YYYY-MM-DD` (años 0001 a 9999), `type=CREDIT|DEBIT`, `minAmount` y `maxAmount`, todos opcionales y combinados con AND en la consulta de base de datos. Las fechas incluyen días completos según `transactionDate`, sin conversión de zona horaria: desde las 00:00 de `from` hasta antes de las 00:00 del día siguiente a `to`. Para `to=9999-12-31` no se aplica límite superior, porque MySQL no almacena fechas posteriores; años fuera del rango devuelven 400. Sin filtros se conserva el historial completo y su orden `transactionDate DESC, id DESC`.
-
-Los montos comparan la magnitud `abs(amount)`: mínimo exclusivo y máximo inclusivo. Los rangos son `[0,1000]`, `(1000,5000]`, `(5000,20000]`, `(20000,100000]` y `>100000`. Nota: `minAmount=0` incluye también un eventual movimiento de monto cero para representar literalmente el primer rango; los depósitos actuales son siempre positivos.
-
 ### Caso 15 — Filtros combinados
 
 **Tour:** Intersección de filtros
 **Escenario:** consultar la actividad propia con `from=2026-10-09&to=2026-10-09&type=CREDIT&minAmount=1000&maxAmount=5000`. Las fechas se toman de `transactionDate` de los ingresos creados; repetir con `type=DEBIT` y los mismos límites de monto.
 **Resultado esperado:** HTTP 200 con solo el ingreso de 1000.50 para CREDIT y lista vacía para DEBIT.
-**Resultado obtenido:** HTTP 200 con el movimiento esperado para CREDIT; HTTP 200 con `[]` para DEBIT. Los ingresos desde tarjeta DEBIT son movimientos CREDIT, no egresos.
+**Resultado obtenido:** HTTP 200 con el movimiento esperado para CREDIT; HTTP 200 con `[]` para DEBIT.
 
 ### Caso 16 — Días inclusivos y límites de fecha opcionales
 
 **Tour:** Límites de calendario
-**Escenario:** consultar desde el día del primer ingreso hasta el día del último, luego solo `from`, solo `to`, `to=9999-12-31`, `to` del día anterior al primero y `from` del día posterior al último. Las fechas se obtienen de las respuestas, no del reloj local.
+**Escenario:** consultar desde el día del primer ingreso hasta el día del último, luego solo `from`, solo `to`, `to=9999-12-31`, `to` del día anterior al primero y `from` del día posterior al último.
 **Resultado esperado:** HTTP 200 con los seis movimientos en orden descendente para los primeros cuatro pedidos; lista vacía para los dos pedidos fuera del intervalo.
-**Resultado obtenido:** HTTP 200 con los seis IDs esperados en orden para los cuatro pedidos inclusivos; HTTP 200 con `[]` para ambos pedidos fuera del intervalo. La fecha máxima admitida no produjo 500.
+**Resultado obtenido:** HTTP 200 con los seis IDs esperados en orden para los cuatro pedidos inclusivos; HTTP 200 con `[]` para ambos pedidos fuera del intervalo.
 
 ### Caso 17 — Límites de monto y resultados vacíos
 
 **Tour:** Fronteras de rangos
 **Escenario:** consultar `minAmount=250`, `maxAmount=250`, `minAmount=0&maxAmount=1000`, límites iguales de 250, los tres rangos superiores sin ingresos y `type=DEBIT` sin otros filtros.
 **Resultado esperado:** el mínimo excluye 250.00 y deja solo 1000.50; el máximo incluye 250.00 y los cuatro ingresos de 0.25; el primer rango contiene esos cinco movimientos. Límites iguales positivos, rangos superiores y DEBIT devuelven lista vacía.
-**Resultado obtenido:** HTTP 200 con los IDs exactos y en orden en las ocho variantes. No se crearon ingresos adicionales ni egresos artificiales para probar los límites.
+**Resultado obtenido:** HTTP 200 con los IDs exactos y en orden en las ocho variantes.
 
 ### Caso 18 — Filtros inválidos
 
 **Tour:** Datos inválidos
-**Escenario:** enviar fecha malformada, fecha imposible `2026-02-30`, fechas invertidas, fecha fuera de rango `+999999999-12-31`, tipo UNKNOWN, mínimo negativo, máximo negativo, mínimo mayor que máximo y monto no numérico.
-**Resultado esperado:** HTTP 400 en las nueve variantes, sin modificar saldos ni registrar movimientos.
-**Resultado obtenido:** HTTP 400 con cuerpo de error en las nueve variantes. Las comprobaciones posteriores mantuvieron el saldo propio de 1251.50, los seis movimientos y la cuenta secundaria vacía con saldo cero.
+**Escenario:** enviar fecha malformada, fecha fuera de rango, mínimo negativo, máximo negativo, mínimo mayor que máximo y monto no numérico.
+**Resultado esperado:** HTTP 400 en las seis variantes, sin modificar saldos ni registrar movimientos.
+**Resultado obtenido:** HTTP 400 con cuerpo de error en las seis variantes.
 
-### Caso 19 — Actividad ajena con filtros
+### Caso 19 — Actividad ajena con filtros válidos
 
 **Tour:** Permisos
-**Escenario:** consultar la actividad de la cuenta 37 con el token de la cuenta 36 y filtros válidos de fecha, DEBIT y monto `(1000,5000]`, aunque esos filtros no tengan coincidencias.
-**Resultado esperado:** HTTP 403, no una lista vacía que omita el control de propiedad.
-**Resultado obtenido:** HTTP 403 sin entregar movimientos de la cuenta ajena.
-
-## Verificación de filtros
-
-- `./mvnw -B -ntp -pl services/account-service -DskipTests package`: compilación y empaquetado correctos.
-- `docker compose up -d --no-deps --build account-service`: solo account-service reconstruido y recreado, sin reconstruir dependencias.
-- `./mvnw -B -ntp -pl services/api-gateway -Dtest=Sprint3ActivityIT test`: 19 tests, 0 fallos, 0 errores, 0 omitidos; conserva los 14 casos originales y agrega cinco grupos.
-- `postman collection run docs/postman/Digital-Money-House.postman_collection.json -e docs/postman/Digital-Money-House.postman_environment.json -i 'Sprint 3' --no-report-events --disable-unicode`: 61 requests y 122 assertions, sin fallos; incluye preparación, variantes y limpieza de tarjetas. No requiere publicación en Postman cloud.
-- `./mvnw -B -ntp test`: 13 tests de regresión existentes, sin fallos, errores ni omitidos. Este comando no selecciona las clases `*IT`; Sprint3ActivityIT se ejecutó explícitamente por separado.
-
-Limitaciones: no hay egresos reales ni movimientos cero en estos datos; no se verifica con fixtures la magnitud de un futuro monto negativo ni una transacción exactamente a medianoche. Los límites exactos de monto se prueban con 250.00, sin agregar depósitos en cada frontera de los rangos. La consulta JPQL evita filtrado en memoria y nuevas abstracciones; no se midió su rendimiento en historiales grandes ni se agregaron índices.
+**Escenario:** consultar la actividad de la cuenta 37 con el token de la cuenta 36 y filtros válidos de fecha, DEBIT y monto.
+**Resultado esperado:** HTTP 403.
+**Resultado obtenido:** HTTP 403.
 
 ## Workflow principal
 
@@ -174,10 +156,6 @@ Limitaciones: no hay egresos reales ni movimientos cero en estos datos; no se ve
 → Ingreso desde CREDIT y DEBIT
 → Consulta de historial completo
 → Consulta de detalle
-
-## Bugs encontrados
-
-No se reprodujeron defectos en los 14 casos explorados.
 
 ## Conclusión
 

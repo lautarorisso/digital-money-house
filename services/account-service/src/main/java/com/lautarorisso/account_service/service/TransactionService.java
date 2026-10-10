@@ -71,13 +71,12 @@ public class TransactionService {
       throw new ValidationException("minAmount must not exceed maxAmount");
     }
     LocalDateTime fromInclusive = from == null ? null : from.atStartOfDay();
-    // MySQL cannot store a date beyond 9999-12-31, so no upper bound is needed for that day.
-    LocalDateTime toExclusive = to == null || to.equals(LocalDate.of(9999, 12, 31))
-        ? null : to.plusDays(1).atStartOfDay();
+    LocalDateTime toExclusive = to == null || to.equals(LocalDate.of(9999, 12, 31)) ? null
+        : to.plusDays(1).atStartOfDay();
     List<TransactionEntity> activity = from == null && to == null && type == null
         && minAmount == null && maxAmount == null
-        ? transactionRepository.findByAccountIdOrderByTransactionDateDescIdDesc(accountId)
-        : transactionRepository.findActivity(accountId, fromInclusive, toExclusive, type, minAmount, maxAmount);
+            ? transactionRepository.findByAccountIdOrderByTransactionDateDescIdDesc(accountId)
+            : transactionRepository.findActivity(accountId, fromInclusive, toExclusive, type, minAmount, maxAmount);
     return activity.stream()
         .map(transactionMapper::toResponse)
         .toList();
