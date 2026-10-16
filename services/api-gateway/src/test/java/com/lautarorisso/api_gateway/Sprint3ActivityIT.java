@@ -190,7 +190,7 @@ class Sprint3ActivityIT {
   void case11NonPositiveAmount() {
     for (BigDecimal amount : List.of(BigDecimal.ZERO, new BigDecimal("-10"))) {
       request(primary).body(Map.of("cardId", creditCardId, "amount", amount))
-          .post("/accounts/{id}/transferences", primary.id())
+          .post("/accounts/{id}/deposits", primary.id())
           .then().statusCode(400).body("status", equalTo(400),
               "message", equalTo("Amount must be at least 0.01"));
     }
@@ -202,7 +202,7 @@ class Sprint3ActivityIT {
   @DisplayName("Case 12 - Deposit into a missing account")
   void case12MissingAccount() {
     request(primary).body(Map.of("cardId", creditCardId, "amount", BigDecimal.TEN))
-        .post("/accounts/{id}/transferences", Long.MAX_VALUE)
+        .post("/accounts/{id}/deposits", Long.MAX_VALUE)
         .then().statusCode(404).body("status", equalTo(404), "message", equalTo("Account not found"));
     assertAccountsUnchanged();
   }
@@ -212,7 +212,7 @@ class Sprint3ActivityIT {
   @DisplayName("Case 13 - Card not associated with the account")
   void case13CardOutsideAccount() {
     request(primary).body(Map.of("cardId", secondaryCardId, "amount", BigDecimal.TEN))
-        .post("/accounts/{id}/transferences", primary.id())
+        .post("/accounts/{id}/deposits", primary.id())
         .then().statusCode(404).body("status", equalTo(404), "message", equalTo("Card not found in this account"));
     assertAccountsUnchanged();
   }
@@ -222,7 +222,7 @@ class Sprint3ActivityIT {
   @DisplayName("Case 14 - Deposit into another owner's account")
   void case14ForeignAccountDeposit() {
     request(primary).body(Map.of("cardId", secondaryCardId, "amount", BigDecimal.TEN))
-        .post("/accounts/{id}/transferences", secondary.id())
+        .post("/accounts/{id}/deposits", secondary.id())
         .then().statusCode(403).body("status", equalTo(403),
             "message", equalTo("You do not have access to this account"));
     assertAccountsUnchanged();
@@ -354,7 +354,7 @@ class Sprint3ActivityIT {
 
   private Long createDeposit(Long cardId, BigDecimal amount) {
     Response deposit = request(primary).body(Map.of("cardId", cardId, "amount", amount))
-        .post("/accounts/{id}/transferences", primary.id())
+        .post("/accounts/{id}/deposits", primary.id())
         .then().statusCode(201).extract().response();
     Long id = deposit.jsonPath().getLong("id");
     lastDepositDate = LocalDateTime.parse(deposit.jsonPath().getString("transactionDate")).toLocalDate();

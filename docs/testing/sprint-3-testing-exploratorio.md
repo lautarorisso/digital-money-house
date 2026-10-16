@@ -1,5 +1,16 @@
 # Testing exploratorio — Sprint 3
 
+> **Nota de seguimiento:** este informe conserva los escenarios, URLs y resultados de la
+> ejecución histórica de Sprint 3. La ruta actual para ingresos es
+> `POST /accounts/{id}/deposits` (mismo cuerpo `cardId`/`amount` y respuesta 201).
+> Las URLs `/transferences` de los casos siguientes ya no permiten ingresos y se
+> conservan solo como evidencia histórica. La colección Postman y `Sprint3ActivityIT`
+> usan `/deposits`; no se repitió la ejecución live para este seguimiento.
+>
+> Se agregaron pruebas unitarias con repositorios Mockito para filtros, ingresos y
+> detalle, además de pruebas MVC para la ruta nueva, validación y rechazo de la anterior.
+> No se cambió la lógica de `TransactionService` ni se implementó Sprint 4.
+
 ## Alcance
 
 Se realizó testing exploratorio sobre:

@@ -67,10 +67,20 @@ Listo para probar.
 
 La colección incluye las carpetas **Registro**, **Login** y **Logout** (Sprint 1), **Sprint 2** y **Sprint 3**. Para Sprint 1, ejecutar Registro → Login → Logout. Para Sprint 2 o 3, seleccionar directamente la carpeta correspondiente y pulsar **Run**; cada una prepara sus propios datos automáticamente.
 
-## Planilla de casos de prueba
+## Informes de testing
 
-- [Planilla de casos de prueba (Sprint 1)](docs/testing/sprint-1-testing-manual.md)
-- [Planilla de casos de prueba (Sprint 2)](docs/testing/sprint-2-testing-manual.md)
+### Sprint 1
+
+- [Informe de testing exploratorio](docs/testing/sprint-1-testing-exploratorio.md)
+- [Planilla de casos de prueba](docs/testing/sprint-1-testing-manual.md)
+
+### Sprint 2
+
+- [Planilla de casos de prueba](docs/testing/sprint-2-testing-manual.md)
+
+### Sprint 3
+
+- [Informe de testing exploratorio](docs/testing/sprint-3-testing-exploratorio.md)
 
 ## Testing automatizado
 
@@ -86,7 +96,7 @@ Sprint 3:
 ./mvnw -pl services/api-gateway -Dtest=Sprint3ActivityIT -Ddmh.baseUrl=http://localhost:8080 test
 ```
 
-La suite registra e inicia sesión automáticamente; no requiere credenciales ni IDs. Los tests habituales siguen ejecutándose con `./mvnw test`.
+Los tests habituales siguen ejecutándose con `./mvnw test`.
 
 ## Notas
 

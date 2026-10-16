@@ -84,7 +84,7 @@ public class AccountController {
     return transactionService.getActivityDetail(accountId, transferId, jwt.getSubject());
   }
 
-  @PostMapping("/{id}/transferences")
+  @PostMapping("/{id}/deposits")
   @ResponseStatus(HttpStatus.CREATED)
   public TransactionResponse createTransference(@AuthenticationPrincipal Jwt jwt, @PathVariable("id") Long id,
       @Valid @RequestBody CreateTransferenceRequest request) {

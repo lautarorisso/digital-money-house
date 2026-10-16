@@ -29,10 +29,10 @@ spring:
               uri: lb://account-service
               predicates:
                 - Path=/accounts/*/activity,/accounts/*/activity/*
-            - id: account-service-transference-endpoints
+            - id: account-service-deposit-endpoints
               uri: lb://account-service
               predicates:
-                - Path=/accounts/*/transferences
+                - Path=/accounts/*/deposits
   security:
     oauth2:
       resourceserver:
