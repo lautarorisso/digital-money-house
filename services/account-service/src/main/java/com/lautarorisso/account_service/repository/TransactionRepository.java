@@ -13,6 +13,16 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TransactionRepository extends JpaRepository<TransactionEntity, Long> {
 
+  @Query("""
+      select t.counterpartyAccountId from TransactionEntity t
+      where t.accountId = :accountId and t.type = 'DEBIT'
+        and t.counterpartyAccountId is not null
+      group by t.counterpartyAccountId
+      order by max(t.id) desc
+      """)
+  List<Long> findRecentRecipientIds(@Param("accountId") Long accountId,
+      org.springframework.data.domain.Pageable pageable);
+
   List<TransactionEntity> findTop5ByAccountIdOrderByTransactionDateDescIdDesc(Long accountId);
 
   List<TransactionEntity> findByAccountIdOrderByTransactionDateDescIdDesc(Long accountId);

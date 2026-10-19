@@ -8,6 +8,9 @@ import com.lautarorisso.account_service.dto.CreateCardRequest;
 import com.lautarorisso.account_service.dto.CreateTransferenceRequest;
 import com.lautarorisso.account_service.dto.TransactionResponse;
 import com.lautarorisso.account_service.dto.UpdateAccountRequest;
+import com.lautarorisso.account_service.dto.InternalTransferRequest;
+import com.lautarorisso.account_service.dto.TransferRecipientResponse;
+import com.lautarorisso.account_service.service.InternalTransferService;
 import com.lautarorisso.account_service.service.AccountService;
 import com.lautarorisso.account_service.service.CardService;
 import com.lautarorisso.account_service.service.TransactionService;
@@ -15,6 +18,7 @@ import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -39,6 +43,21 @@ public class AccountController {
   private final AccountService accountService;
   private final CardService cardService;
   private final TransactionService transactionService;
+  private final InternalTransferService internalTransferService;
+
+  @PostMapping("/{id}/transferences")
+  public Map<String, String> transfer(@AuthenticationPrincipal Jwt jwt,
+      @PathVariable("id") Long id,
+      @Valid @RequestBody InternalTransferRequest request) {
+    internalTransferService.transfer(id, jwt.getSubject(), request);
+    return Map.of("message", "ok");
+  }
+
+  @GetMapping("/{id}/transferences")
+  public List<TransferRecipientResponse> recipients(
+      @AuthenticationPrincipal Jwt jwt, @PathVariable("id") Long id) {
+    return internalTransferService.recipients(id, jwt.getSubject());
+  }
 
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)

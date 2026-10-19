@@ -70,6 +70,13 @@ public class GlobalExceptionHandler {
         "Not Found", ex.getMessage(), request.getRequestURI());
   }
 
+  @ExceptionHandler(InsufficientFundsException.class)
+  @ResponseStatus(HttpStatus.GONE)
+  public ApiError handleInsufficientFunds(InsufficientFundsException ex, HttpServletRequest request) {
+    return new ApiError(LocalDateTime.now(), HttpStatus.GONE.value(),
+        "Gone", ex.getMessage(), request.getRequestURI());
+  }
+
   @ExceptionHandler(ConflictException.class)
   @ResponseStatus(HttpStatus.CONFLICT)
   public ApiError handleConflict(ConflictException ex, HttpServletRequest request) {

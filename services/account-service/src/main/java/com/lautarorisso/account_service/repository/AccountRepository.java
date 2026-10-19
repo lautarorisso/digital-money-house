@@ -14,6 +14,12 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
 
   boolean existsByUserId(Long userId);
 
+  @Query("select a.ownerSub from AccountEntity a where a.id = :id")
+  Optional<String> findOwnerSubById(@Param("id") Long id);
+
+  @Query("select a.id from AccountEntity a where a.cvu = :destination or a.alias = :destination")
+  Optional<Long> findIdByDestination(@Param("destination") String destination);
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select account from AccountEntity account where account.id = :id")
   Optional<AccountEntity> findByIdForUpdate(@Param("id") Long id);

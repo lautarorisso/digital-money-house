@@ -32,7 +32,8 @@ class DepositRouteTest {
         "account-service-card-endpoints",
         "Path=/cards,/accounts/*/cards,/cards/accounts/*/cards,/cards/accounts/*/cards/*",
         "account-service-activity-endpoints", "Path=/accounts/*/activity,/accounts/*/activity/*",
-        "account-service-deposit-endpoints", "Path=/accounts/*/deposits"), routes);
+        "account-service-deposit-endpoints", "Path=/accounts/*/deposits",
+        "account-service-transfer-endpoints", "Path=/accounts/*/transferences"), routes);
     assertEquals("RewritePath=/users-service/(?<segment>.*), /${segment}",
         configuration.getProperty(prefix + "[0].filters[0]"));
     assertEquals("RewritePath=/accounts-service/(?<segment>.*), /${segment}",

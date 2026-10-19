@@ -31,7 +31,7 @@ class AccountControllerDepositTest {
   void setUp() {
     Jwt jwt = Jwt.withTokenValue("test").header("alg", "none").subject("owner").build();
     mvc = MockMvcBuilders.standaloneSetup(new AccountController(
-        mock(AccountService.class), mock(CardService.class), transactions))
+        mock(AccountService.class), mock(CardService.class), transactions, mock(InternalTransferService.class)))
         .setCustomArgumentResolvers(new HandlerMethodArgumentResolver() {
           public boolean supportsParameter(MethodParameter parameter) {
             return parameter.hasParameterAnnotation(AuthenticationPrincipal.class);
@@ -62,7 +62,7 @@ class AccountControllerDepositTest {
   void oldRouteCannotDeposit() throws Exception {
     mvc.perform(post("/accounts/1/transferences").contentType(MediaType.APPLICATION_JSON)
         .content("{\"cardId\":2,\"amount\":10}"))
-        .andExpect(status().isNotFound());
+        .andExpect(status().isBadRequest());
     verifyNoInteractions(transactions);
   }
 
