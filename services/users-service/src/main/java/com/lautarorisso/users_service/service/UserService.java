@@ -60,7 +60,7 @@ public class UserService {
           "Account creation failed. The registration was rolled back, please try again.", ex);
     }
     return new RegisterResponse(user.getId(), user.getNombre(), user.getApellido(),
-        user.getDni(), user.getEmail(), user.getTelefono(), account.cvu(), account.alias());
+        user.getDni(), user.getEmail(), user.getTelefono(), account.cvu(), account.alias(), account.id());
   }
 
   public UserProfileResponse getProfile(Long userId, String subject) {

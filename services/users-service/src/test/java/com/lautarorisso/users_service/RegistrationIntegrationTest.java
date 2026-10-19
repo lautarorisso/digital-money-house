@@ -58,7 +58,8 @@ class RegistrationIntegrationTest {
              "email":"lautaro@example.com","telefono":"+541112345678","password":"securePass1"}
             """))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.id").isNumber())
+        .andExpect(jsonPath("$.id").value(1))
+        .andExpect(jsonPath("$.accountId").value(7))
         .andExpect(jsonPath("$.cvu").value("1234567890123456789012"))
         .andExpect(jsonPath("$.alias").value("casa.rio.sol"));
 

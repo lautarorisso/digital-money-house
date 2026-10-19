@@ -65,9 +65,13 @@ Listo para probar.
    - `Digital-Money-House.postman_environment.json`
 3. Elegir el environment "Digital Money House — Local" (ya trae `baseUrl = http://localhost:8080`).
 
-La colección incluye las carpetas **Registro**, **Login** y **Logout** (Sprint 1), **Sprint 2** y **Sprint 3**. Para Sprint 1, ejecutar Registro → Login → Logout. Para Sprint 2 o 3, seleccionar directamente la carpeta correspondiente y pulsar **Run**; cada una prepara sus propios datos automáticamente.
+La colección incluye las carpetas **Registro**, **Login** y **Logout** (Sprint 1), **Sprint 2**, **Sprint 3** y **Sprint 4**. Para Sprint 1, ejecutar Registro → Login → Logout. Para Sprint 2, 3 o 4, seleccionar directamente la carpeta correspondiente y pulsar **Run**; cada una prepara sus propios datos automáticamente.
+
+Antes de ejecutar, esperar a que el stack esté listo y los servicios estén registrados en Eureka (`http://localhost:8761`).
 
 ## Informes de testing
+
+- [QA SignOff — Sprints 1 a 4](docs/testing/qa-signoff.md)
 
 ### Sprint 1
 
@@ -81,8 +85,20 @@ La colección incluye las carpetas **Registro**, **Login** y **Logout** (Sprint 
 ### Sprint 3
 
 - [Informe de testing exploratorio](docs/testing/sprint-3-testing-exploratorio.md)
+- [Planilla de casos de prueba](docs/testing/sprint-3-testing-manual.md)
+
+### Sprint 4
+
+- [Informe de testing exploratorio](docs/testing/sprint-4-testing-exploratorio.md)
+- [Planilla de casos de prueba](docs/testing/sprint-4-testing-manual.md)
 
 ## Testing automatizado
+
+Sprint 1 (Postman):
+
+```bash
+postman collection run docs/postman/Digital-Money-House.postman_collection.json -e docs/postman/Digital-Money-House.postman_environment.json -i "Registro" -i "Login" -i "Logout" --no-report-events
+```
 
 Sprint 2:
 
@@ -94,6 +110,12 @@ Sprint 3:
 
 ```bash
 ./mvnw -pl services/api-gateway -Dtest=Sprint3ActivityIT -Ddmh.baseUrl=http://localhost:8080 test
+```
+
+Sprint 4 (Postman):
+
+```bash
+postman collection run docs/postman/Digital-Money-House.postman_collection.json -e docs/postman/Digital-Money-House.postman_environment.json -i "Sprint 4" --no-report-events
 ```
 
 Los tests habituales siguen ejecutándose con `./mvnw test`.

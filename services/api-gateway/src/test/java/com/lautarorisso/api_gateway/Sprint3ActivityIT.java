@@ -334,9 +334,9 @@ class Sprint3ActivityIT {
         .then().statusCode(200).extract().path("accessToken");
     assertTrue(token != null && !token.isBlank(), "Login must return an access token");
 
-    // Verify the candidate account ID because registration only returns the user ID.
+    // Verify the account returned by registration before using it.
     Response account = given().spec(api).auth().oauth2(token)
-        .get("/accounts-service/accounts/{id}", registered.jsonPath().getLong("id"))
+        .get("/accounts-service/accounts/{id}", registered.jsonPath().getLong("accountId"))
         .then().statusCode(200)
         .body("cvu", equalTo(registered.jsonPath().getString("cvu")),
             "alias", equalTo(registered.jsonPath().getString("alias")),

@@ -69,6 +69,8 @@ class UserServiceTest {
     RegisterResponse response = userService.register(request);
 
     assertEquals(42L, response.id());
+    assertEquals(9L, new com.fasterxml.jackson.databind.ObjectMapper()
+        .valueToTree(response).path("accountId").asLong());
     assertEquals("1234567890123456789012", response.cvu());
     assertEquals("casa.rio.sol", response.alias());
     verify(userRepository).save(any(UserEntity.class));
