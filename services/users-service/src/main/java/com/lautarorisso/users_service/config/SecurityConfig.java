@@ -26,6 +26,14 @@ import org.springframework.security.oauth2.server.resource.web.BearerTokenResolv
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 
+@io.swagger.v3.oas.annotations.OpenAPIDefinition(
+    info = @io.swagger.v3.oas.annotations.info.Info(title = "Usuarios", version = "v1"),
+    servers = @io.swagger.v3.oas.annotations.servers.Server(url = "/users-service"))
+@io.swagger.v3.oas.annotations.security.SecurityScheme(name = "bearerAuth",
+    type = io.swagger.v3.oas.annotations.enums.SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
+@io.swagger.v3.oas.annotations.security.SecurityScheme(name = "refreshToken",
+    type = io.swagger.v3.oas.annotations.enums.SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT",
+    description = "Refresh token exclusivo para cerrar sesión")
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -38,6 +46,7 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.POST, "/users/register", "/auth/login", "/user/logout").permitAll()
+            .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
             .requestMatchers("/error").permitAll()
             .anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2

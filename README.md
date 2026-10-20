@@ -51,9 +51,24 @@ Listo para probar.
 | `8081` | Keycloak                   |
 | `8083` | users-service              |
 | `8761` | service-discovery (Eureka) |
-| `8082` | account-service            |
+| `8082` (interno) | account-service; acceso por el gateway |
 
 > Todo entra por el gateway (`8080`).
+
+## Logs y Swagger
+
+La documentación se abre sin token desde el gateway:
+
+- [Swagger de usuarios](http://localhost:8080/users-service/swagger-ui/index.html)
+- [Swagger de cuentas y tarjetas](http://localhost:8080/accounts-service/swagger-ui/index.html)
+
+Iniciar sesión con `POST /users-service/auth/login`. Para probar endpoints protegidos, pegar el `accessToken` en **Authorize → bearerAuth**; para logout, usar el `refreshToken` en **Authorize → refreshToken**. Ambos se ingresan sin el prefijo `Bearer`.
+
+Los logs de consola registran login, logout, depósitos y transferencias exitosos, sin contraseñas, tokens ni datos de tarjetas:
+
+```bash
+docker compose logs -f users-service account-service
+```
 
 ## Probar los endpoints con Postman
 

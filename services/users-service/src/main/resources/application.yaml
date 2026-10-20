@@ -27,6 +27,12 @@ keycloak:
   backend-client-secret: ${KEYCLOAK_BACKEND_CLIENT_SECRET}
   frontend-client-id: ${KEYCLOAK_FRONTEND_CLIENT_ID}
 
+springdoc:
+  swagger-ui:
+    config-url: /users-service/v3/api-docs/swagger-config
+    url: /users-service/v3/api-docs
+    disable-swagger-default-url: true
+
 eureka:
   client:
     service-url:

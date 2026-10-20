@@ -45,6 +45,35 @@ class RegistrationIntegrationTest {
   AccountClient accountClient;
 
   @Test
+  void documentationIsPublicAndDescribesGatewayBearerAccess() throws Exception {
+    mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/swagger-ui/index.html"))
+        .andExpect(status().isOk());
+    mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.servers[0].url").value("/users-service"))
+        .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"))
+        .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
+        .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.bearerFormat").value("JWT"))
+        .andExpect(jsonPath("$.paths['/auth/login'].post.security").doesNotExist())
+        .andExpect(jsonPath("$.paths['/users/register'].post.security").doesNotExist())
+        .andExpect(jsonPath("$.paths['/user/logout'].post.security[0].refreshToken").isArray())
+        .andExpect(jsonPath("$.paths['/user/logout'].post.security[0].bearerAuth").doesNotExist())
+        .andExpect(jsonPath("$.paths['/users/{id}'].get.responses['200']").exists())
+        .andExpect(jsonPath("$.components.securitySchemes.refreshToken.type").value("http"))
+        .andExpect(jsonPath("$.components.securitySchemes.refreshToken.scheme").value("bearer"))
+        .andExpect(jsonPath("$.components.securitySchemes.refreshToken.bearerFormat").value("JWT"))
+        .andExpect(jsonPath("$.paths['/user/logout'].post.parameters[?(@.name == 'Authorization')]").doesNotExist());
+    mockMvc.perform(post("/user/logout"))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.message").value("Refresh token is required"));
+    mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/v3/api-docs/swagger-config"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.url").value("/users-service/v3/api-docs"));
+    mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/users/1"))
+        .andExpect(status().isUnauthorized());
+  }
+
+  @Test
   void registerPersistsUserThroughTheApi() throws Exception {
     when(keycloakClient.getServiceAccountToken()).thenReturn("service-token");
     when(keycloakClient.createUser(any(), any(), any(), any(), any(), any())).thenReturn("subject-123");
