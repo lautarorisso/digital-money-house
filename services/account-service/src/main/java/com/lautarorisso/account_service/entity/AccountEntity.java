@@ -54,6 +54,10 @@ public class AccountEntity {
     this.balance = this.balance.add(amount);
   }
 
+  public void debit(BigDecimal amount) {
+    this.balance = this.balance.subtract(amount);
+  }
+
   public void updateAlias(String alias) {
     this.alias = alias;
   }

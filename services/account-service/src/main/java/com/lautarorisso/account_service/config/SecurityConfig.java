@@ -14,6 +14,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 
+@io.swagger.v3.oas.annotations.OpenAPIDefinition(
+    info = @io.swagger.v3.oas.annotations.info.Info(title = "Cuentas y tarjetas", version = "v1"),
+    servers = @io.swagger.v3.oas.annotations.servers.Server(url = "/accounts-service"))
+@io.swagger.v3.oas.annotations.security.SecurityScheme(name = "bearerAuth",
+    type = io.swagger.v3.oas.annotations.enums.SecuritySchemeType.HTTP, scheme = "bearer", bearerFormat = "JWT")
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -23,6 +28,7 @@ public class SecurityConfig {
     http
         .csrf(csrf -> csrf.disable())
         .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll()
             .requestMatchers("/error").permitAll()
             .anyRequest().authenticated())
         .oauth2ResourceServer(oauth2 -> oauth2

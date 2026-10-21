@@ -18,6 +18,12 @@ spring:
         jwt:
           jwk-set-uri: http://keycloak:8081/realms/${KEYCLOAK_REALM}/protocol/openid-connect/certs
 
+springdoc:
+  swagger-ui:
+    config-url: /accounts-service/v3/api-docs/swagger-config
+    url: /accounts-service/v3/api-docs
+    disable-swagger-default-url: true
+
 eureka:
   client:
     service-url:

@@ -3,8 +3,8 @@
 ## Resultado general
 
 - Total de casos: 14
-- Aprobados: 14 / 14
-- Fallidos: 0
+- Resultado inicial: 9 aprobados y 5 fallidos (casos 5, 6, 7, 13 y 14)
+- Retest: los 5 casos fallidos fueron aprobados
 - Suite de humo: 3 casos (registro, login y logout con datos válidos)
 - Suite de regresión: 14 casos (todos los del sprint, incluidos error/validación y retests de defectos corregidos)
 
@@ -16,9 +16,9 @@
 | Caso 2 | Registro con campos obligatorios faltantes      | —                                        | `POST /users/register` sin nombre, apellido, DNI y contraseña                          | HTTP 400 con mensajes por cada campo                       | HTTP 400 con mensajes por cada campo                                                    | Aprobado | Regresión        |
 | Caso 3 | Registro con email con formato inválido         | —                                        | `POST /users/register` con email sin formato válido                                    | HTTP 400                                                   | HTTP 400                                                                                | Aprobado | Regresión        |
 | Caso 4 | Registro con email duplicado                    | Existe un usuario con el email a usar    | `POST /users/register` con un email ya registrado                                      | HTTP 400 indicando que el email ya está registrado         | HTTP 400 indicando que el email ya está registrado                                      | Aprobado | Regresión        |
-| Caso 5 | Registro con contraseña débil                   | —                                        | `POST /users/register` con contraseña de 1 carácter                                    | HTTP 400 por política de contraseñas (mínimo 8, máximo 64) | HTTP 400 por política de contraseñas (defecto corregido; retest aprobado)               | Aprobado | Regresión        |
-| Caso 6 | Registro con JSON malformado                    | —                                        | `POST /users/register` con cuerpo JSON malformado                                      | HTTP 400, error del cliente                                | HTTP 400 con el mensaje del handler (defecto corregido; retest aprobado)                | Aprobado | Regresión        |
-| Caso 7 | Registro con caracteres especiales en el nombre | —                                        | `POST /users/register` con nombre que contiene `()`, `;`, `&`, `<`, `>`                | HTTP 400 con mensaje que indica el campo rechazado         | HTTP 400 con mensaje que indica el campo rechazado (defecto corregido; retest aprobado) | Aprobado | Regresión        |
+| Caso 5 | Registro con contraseña débil                   | —                                        | `POST /users/register` con contraseña de 1 carácter                                    | HTTP 400 por política de contraseñas (mínimo 8, máximo 64) | Inicial: HTTP 201 con contraseña débil; retest: HTTP 400 por política de contraseñas | Fallido (corregido; retest aprobado) | Regresión        |
+| Caso 6 | Registro con JSON malformado                    | —                                        | `POST /users/register` con cuerpo JSON malformado                                      | HTTP 400, error del cliente                                | Inicial: HTTP 500; retest: HTTP 400 con el mensaje del handler | Fallido (corregido; retest aprobado) | Regresión        |
+| Caso 7 | Registro con caracteres especiales en el nombre | —                                        | `POST /users/register` con nombre que contiene `()`, `;`, `&`, `<`, `>`                | HTTP 400 con mensaje que indica el campo rechazado         | Inicial: HTTP 500 sin explicación; retest: HTTP 400 indicando el campo rechazado | Fallido (corregido; retest aprobado) | Regresión        |
 
 ## Login
 
@@ -34,8 +34,8 @@
 | ID      | Caso de prueba                  | Precondiciones  | Pasos y datos                                                         | Resultado esperado                   | Resultado obtenido                           | Estado   | Suite            |
 | ------- | ------------------------------- | --------------- | --------------------------------------------------------------------- | ------------------------------------ | -------------------------------------------- | -------- | ---------------- |
 | Caso 12 | Logout con refresh token válido | Sesión iniciada | `POST /user/logout` con el refresh token en el header `Authorization` | HTTP 200 con revocación de la sesión | HTTP 200; el refresh token queda inutilizado | Aprobado | Humo y regresión |
-| Caso 13 | Logout sin token                | —               | `POST /user/logout` sin enviar token                                  | HTTP 400 — el logout exige token                                            | HTTP 400 (defecto corregido; retest aprobado)              | Aprobado | Regresión        |
-| Caso 14 | Logout con refresh token inválido | —             | `POST /user/logout` con un refresh token inválido en el header `Authorization` | HTTP 400 indicando que el refresh token es inválido o expiró | HTTP 400 con mensaje de refresh token inválido o expirado (defecto corregido; retest aprobado) | Aprobado | Regresión |
+| Caso 13 | Logout sin token                | —               | `POST /user/logout` sin enviar token                                  | HTTP 400 — el logout exige token                                            | Inicial: HTTP 200 sin revocar sesión; retest: HTTP 400 | Fallido (corregido; retest aprobado) | Regresión        |
+| Caso 14 | Logout con refresh token inválido | —             | `POST /user/logout` con un refresh token inválido en el header `Authorization` | HTTP 400 indicando que el refresh token es inválido o expiró | Inicial: HTTP 200 pese al token inválido; retest: HTTP 400 indicando token inválido o expirado | Fallido (corregido; retest aprobado) | Regresión |
 
 ## Suite de prueba ejecutable
 

@@ -39,6 +39,15 @@ public class TransactionEntity {
   @Column(name = "balance_after", precision = 12, scale = 2)
   private BigDecimal balanceAfter;
 
+  @Column(name = "counterparty_account_id")
+  private Long counterpartyAccountId;
+
+  public TransactionEntity(Long accountId, BigDecimal amount, String type, String description,
+      LocalDateTime transactionDate, BigDecimal balanceAfter, Long counterpartyAccountId) {
+    this(accountId, amount, type, description, transactionDate, balanceAfter);
+    this.counterpartyAccountId = counterpartyAccountId;
+  }
+
   public TransactionEntity(Long accountId, BigDecimal amount, String type, String description,
       LocalDateTime transactionDate, BigDecimal balanceAfter) {
     this.accountId = accountId;

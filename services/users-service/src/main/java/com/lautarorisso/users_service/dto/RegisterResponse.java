@@ -8,5 +8,6 @@ public record RegisterResponse(
     String email,
     String telefono,
     String cvu,
-    String alias
+    String alias,
+    Long accountId
 ) {}

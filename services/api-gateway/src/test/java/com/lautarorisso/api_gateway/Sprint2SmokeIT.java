@@ -76,8 +76,8 @@ class Sprint2SmokeIT {
         .then().statusCode(200).extract().path("accessToken");
     assertTrue(accessToken != null && !accessToken.isBlank(), "Login must return an access token");
 
-    // Registration does not expose accountId; verify this candidate before using it.
-    Response account = request().get("/accounts-service/accounts/{id}", userId)
+    // Verify the account returned by registration before using it.
+    Response account = request().get("/accounts-service/accounts/{id}", registered.jsonPath().getLong("accountId"))
         .then().statusCode(200).body("cvu", equalTo(cvu), "alias", equalTo(alias))
         .extract().response();
     accountId = account.jsonPath().getLong("id");
@@ -281,7 +281,7 @@ class Sprint2SmokeIT {
     otherToken = given().spec(api).body(Map.of("email", otherEmail, "password", "Passw0rd!23"))
         .post("/users-service/auth/login").then().statusCode(200).extract().path("accessToken");
     Response account = given().spec(api).auth().oauth2(otherToken)
-        .get("/accounts-service/accounts/{id}", otherUserId)
+        .get("/accounts-service/accounts/{id}", registered.jsonPath().getLong("accountId"))
         .then().statusCode(200).body("cvu", equalTo(registered.jsonPath().getString("cvu")),
             "alias", equalTo(otherAlias)).extract().response();
     otherAccountId = account.jsonPath().getLong("id");

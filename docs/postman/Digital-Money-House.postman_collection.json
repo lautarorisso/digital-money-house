@@ -1,8 +1,8 @@
 {
   "info": {
     "_postman_id": "e9c12f6a-a10a-4a29-ae9b-1584a5d6b9f6",
-    "name": "Digital Money House — Sprints 1, 2 y 3",
-    "description": "Con Docker activo, importar el environment local y ejecutar completa la carpeta Sprint 2 o Sprint 3 con Run. Cada una prepara sus propios usuarios y datos. No requiere credenciales ni IDs manuales. Sprint 1 conserva Registro, Login y Logout. Sprint 3 deja cuentas y movimientos de prueba en la base y elimina sus tarjetas al finalizar.",
+    "name": "Digital Money House — Sprints 1, 2, 3 y 4",
+    "description": "Con Docker activo, importar el environment local y ejecutar completa la carpeta Sprint 2 o Sprint 3 con Run. Cada una prepara sus propios usuarios y datos. No requiere credenciales ni IDs manuales. Sprint 1 conserva Registro, Login y Logout. Sprint 3 deja cuentas y movimientos de prueba en la base y elimina sus tarjetas al finalizar. Sprint 4 ejecuta los 13 casos con preparación propia de siete cuentas y limpieza de tarjeta.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -464,7 +464,7 @@
     },
     {
       "name": "Sprint 2",
-      "description": "Ejecutar esta carpeta completa con Run. Los primeros seis requests preparan dos usuarios nuevos y verifican sus cuentas. Luego se ejecutan los 22 casos, con saldo cero y sin movimientos. Los PATCH y sus comprobaciones quedan al final; se actualizan las credenciales antes del nuevo login. Las tarjetas se eliminan. Si los IDs de cuenta y usuario no coinciden, la comprobación de CVU/alias detiene la ejecución sin probar contra otra cuenta.",
+      "description": "Ejecutar esta carpeta completa con Run. Los primeros seis requests preparan dos usuarios nuevos y verifican sus cuentas. Luego se ejecutan los 22 casos, con saldo cero y sin movimientos. Los PATCH y sus comprobaciones quedan al final; se actualizan las credenciales antes del nuevo login. Las tarjetas se eliminan. Usa accountId del registro para las cuentas e id para los usuarios; la comprobación de CVU/alias detiene la ejecución si la cuenta no coincide con el registro.",
       "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{accessToken}}", "type": "string" }] },
       "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
         "const match = pm.info.requestName.match(/^Caso (\\d+)/);",
@@ -506,7 +506,7 @@
               "if (pm.response.code !== 201) { pm.execution.setNextRequest(null); } else {",
               "  const user = pm.response.json();",
               "  pm.environment.set('userId', user.id);",
-              "  pm.environment.set('accountId', user.id);",
+              "  pm.environment.set('accountId', user.accountId);",
               "  pm.environment.set('accountCvu', user.cvu);",
               "  pm.environment.set('accountAlias', user.alias);",
               "}"
@@ -520,7 +520,7 @@
             "pm.test('Segundo usuario registrado', () => pm.expect(pm.response.code).to.eql(201));",
             "if (pm.response.code !== 201) { pm.execution.setNextRequest(null); } else {",
             "  const user = pm.response.json();",
-              "  pm.environment.set('otherAccountId', user.id);",
+              "  pm.environment.set('otherAccountId', user.accountId);",
               "  pm.environment.set('otherUserId', user.id);",
             "  pm.environment.set('otherAccountCvu', user.cvu);",
             "  pm.environment.set('otherAccountAlias', user.alias);",
@@ -791,7 +791,7 @@
         "    pm.expect(error.message).to.be.a('string').and.not.empty;",
         "  });",
         "}",
-        "if (expected === 201 && pm.response.code === 201 && url.endsWith('/transferences')) {",
+        "if (expected === 201 && pm.response.code === 201 && url.endsWith('/deposits')) {",
         "  const amount = Number(JSON.parse(pm.variables.replaceIn(pm.request.body.raw)).amount);",
         "  const cents = Number(pm.environment.get('expectedBalanceCents')) + Math.round(amount * 100);",
         "  const transfer = pm.response.json();",
@@ -845,7 +845,7 @@
               "  const user = pm.response.json();",
               "  pm.test('Lautaro Risso registrado', () => { pm.expect(user.nombre).to.eql('Lautaro'); pm.expect(user.apellido).to.eql('Risso'); });",
               "  pm.environment.set('userId', user.id);",
-              "  pm.environment.set('accountId', user.id);",
+              "  pm.environment.set('accountId', user.accountId);",
               "  pm.environment.set('accountCvu', user.cvu);",
               "  pm.environment.set('accountAlias', user.alias);",
               "}"
@@ -859,7 +859,7 @@
             "if (pm.response.code !== 201) { pm.execution.setNextRequest(null); } else {",
             "  const user = pm.response.json();",
             "  pm.test('Lautaro Risso secundario registrado', () => { pm.expect(user.nombre).to.eql('Lautaro'); pm.expect(user.apellido).to.eql('Risso'); });",
-            "  pm.environment.set('otherAccountId', user.id);",
+            "  pm.environment.set('otherAccountId', user.accountId);",
             "  pm.environment.set('otherAccountCvu', user.cvu);",
             "  pm.environment.set('otherAccountAlias', user.alias);",
             "}"
@@ -933,12 +933,12 @@
             "pm.test('Actividad vacía', () => pm.expect(pm.response.json()).to.eql([]));"
           ] } }]
         },
-        { "name": "Caso 9 - Ingreso desde CREDIT", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{creditCardId}},\"amount\":1000.50}" } } },
-        { "name": "Caso 10 - Ingreso desde DEBIT", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":250.00}" } } },
-        { "name": "Preparación - Ingreso adicional 1", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":0.25}" } } },
-        { "name": "Preparación - Ingreso adicional 2", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":0.25}" } } },
-        { "name": "Preparación - Ingreso adicional 3", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":0.25}" } } },
-        { "name": "Preparación - Ingreso adicional 4", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":0.25}" } } },
+        { "name": "Caso 9 - Ingreso desde CREDIT", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{creditCardId}},\"amount\":1000.50}" } } },
+        { "name": "Caso 10 - Ingreso desde DEBIT", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":250.00}" } } },
+        { "name": "Preparación - Ingreso adicional 1", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":0.25}" } } },
+        { "name": "Preparación - Ingreso adicional 2", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":0.25}" } } },
+        { "name": "Preparación - Ingreso adicional 3", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":0.25}" } } },
+        { "name": "Preparación - Ingreso adicional 4", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{debitCardId}},\"amount\":0.25}" } } },
         {
           "name": "Caso 2 - Historial completo y ordenado",
           "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{accountId}}/activity" },
@@ -977,11 +977,11 @@
         { "name": "Caso 6 - Transferencia inexistente", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{accountId}}/activity/9223372036854775807" } },
         { "name": "Caso 7 - Detalle ajeno", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{otherAccountId}}/activity/{{transferId}}" } },
         { "name": "Caso 8 - Transferencia fuera de la cuenta propia", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{otherAccessToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{otherAccountId}}/activity/{{transferId}}" } },
-        { "name": "Caso 11 - Monto cero", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{creditCardId}},\"amount\":0}" } } },
-        { "name": "Caso 11 - Monto negativo", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{creditCardId}},\"amount\":-10}" } } },
-        { "name": "Caso 12 - Cuenta inexistente", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/9223372036854775807/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{creditCardId}},\"amount\":10}" } } },
-        { "name": "Caso 13 - Tarjeta no asociada", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{otherCreditCardId}},\"amount\":10}" } } },
-        { "name": "Caso 14 - Ingreso a cuenta ajena", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{otherAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"cardId\":{{otherCreditCardId}},\"amount\":10}" } } },
+        { "name": "Caso 11 - Monto cero", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{creditCardId}},\"amount\":0}" } } },
+        { "name": "Caso 11 - Monto negativo", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{creditCardId}},\"amount\":-10}" } } },
+        { "name": "Caso 12 - Cuenta inexistente", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/9223372036854775807/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{creditCardId}},\"amount\":10}" } } },
+        { "name": "Caso 13 - Tarjeta no asociada", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{accountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{otherCreditCardId}},\"amount\":10}" } } },
+        { "name": "Caso 14 - Ingreso a cuenta ajena", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{otherAccountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{otherCreditCardId}},\"amount\":10}" } } },
         { "name": "Caso 15 - Filtros combinados CREDIT", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{accountId}}/activity?from={{filterFrom}}&to={{filterTo}}&type=CREDIT&minAmount=1000&maxAmount=5000" } },
         { "name": "Caso 15 - Filtros combinados DEBIT vacío", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{accountId}}/activity?type=DEBIT&minAmount=1000&maxAmount=5000" } },
         { "name": "Caso 16 - Días completos inclusivos", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{accountId}}/activity?from={{filterFrom}}&to={{filterTo}}" } },
@@ -1039,6 +1039,506 @@
         { "name": "Limpieza - Tarjeta CREDIT principal", "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards/{{creditCardId}}" } },
         { "name": "Limpieza - Tarjeta DEBIT principal", "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/cards/accounts/{{accountId}}/cards/{{debitCardId}}" } },
         { "name": "Limpieza - Tarjeta CREDIT secundaria", "request": { "method": "DELETE", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{otherAccessToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/cards/accounts/{{otherAccountId}}/cards/{{otherCreditCardId}}" } }
+      ]
+    },
+    {
+      "name": "Sprint 4",
+      "description": "Ejecutar completa con Run: 13 casos lógicos, incluidas sus variantes y comprobaciones. Cada grupo de rechazos verifica por GET que ambos saldos y las actividades completas permanecen intactos. Registra dos usuarios nuevos, verifica accountId contra CVU/alias, asocia una CREDIT e ingresa 100. Transfiere 10 por CVU y 5 por alias al destinatario, comprobando saldos y actividad de ambas cuentas tras cada operación. No depende de otras carpetas. Conserva usuarios, cuentas y movimientos; elimina su tarjeta y verifica lista vacía. El caso 10 repite una secuencia nativa de requests para crear cinco destinatarios adicionales y transferir 1 a cada uno; los casos 11 y 12 comprueban repetición y alias actualizado. Todas las variables s4 son locales al Run y se reinician al comenzar. Usa accountId del registro, sin consultas a la base ni credenciales manuales.",
+      "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4SourceToken}}", "type": "string" }] },
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+        "const url = pm.variables.replaceIn(pm.request.url.toString());",
+        "const rejection = pm.info.requestName.match(/^Caso ([4-9]) - (?!Sin efectos)/);",
+        "const statuses = {4:400,5:400,6:410,7:400,8:403,9:401};",
+        "const expected = rejection ? statuses[rejection[1]] : pm.request.method === 'PATCH' || (pm.request.method === 'POST' && !url.endsWith('/auth/login') && !url.endsWith('/transferences')) ? 201 : 200;",
+        "pm.test('Estado HTTP esperado', () => pm.expect(pm.response.code, pm.response.text()).to.eql(expected));",
+        "if (pm.response.code !== expected && pm.info.requestName.startsWith('Preparación')) pm.execution.setNextRequest(null);",
+        "if (pm.info.requestName.includes(' - Sin efectos - ')) {",
+        "  const source = pm.info.requestName.endsWith('origen');",
+        "  pm.test('Rechazo conserva datos públicos sin efectos', () => {",
+        "    if (url.endsWith('/activity')) {",
+        "      const snapshot = pm.variables.get(source ? 's4SourceActivity' : 's4RecipientActivity');",
+        "      pm.expect(pm.response.json()).to.eql(JSON.parse(snapshot));",
+        "    } else {",
+        "      pm.expect(pm.response.json().balance).to.eql(source ? 85 : 15);",
+        "    }",
+        "  });",
+        "}",
+        "if (expected === 200 && pm.request.method === 'POST' && url.endsWith('/transferences')) {",
+        "  pm.test('Transferencia confirmada', () => pm.expect(pm.response.json()).to.eql({message:'ok'}));",
+        "}",
+        "if (pm.request.method === 'DELETE') pm.test('Eliminación sin cuerpo', () => pm.expect(pm.response.text()).to.eql(''));"
+      ] } }],
+      "item": [
+        {
+          "name": "Preparación - Registrar origen Sprint 4",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Lautaro\",\"apellido\":\"Risso\",\"dni\":30111223,\"email\":\"{{s4SourceEmail}}\",\"telefono\":\"+541155551234\",\"password\":\"{{s4Password}}\"}" } },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "// Estado local del Run: no reutilizar sesiones ni fixtures anteriores.",
+              "Object.keys(pm.variables.toObject()).filter(key => key.startsWith('s4')).forEach(key => { pm.variables.unset(key); pm.environment.unset(key); });",
+              "const run = pm.variables.replaceIn('{{$guid}}');",
+              "pm.variables.set('s4SourceEmail', 'sprint4-source-' + run + '@dmh.test');",
+              "pm.variables.set('s4RecipientEmail', 'sprint4-recipient-' + run + '@dmh.test');",
+              "pm.variables.set('s4Password', 'Passw0rd!' + run);",
+              "pm.variables.set('s4CardNumber', Date.now().toString() + '401');"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  const user = pm.response.json();",
+              "  pm.test('Registro entrega identificadores de usuario y cuenta', () => { pm.expect(user.id).to.be.a('number').and.above(0); pm.expect(user.accountId).to.be.a('number').and.above(0); });",
+              "  pm.variables.set('s4SourceAccountId', user.accountId);",
+              "  pm.variables.set('s4SourceCvu', user.cvu); pm.variables.set('s4SourceAlias', user.alias);",
+              "}"
+            ] } }
+          ]
+        },
+        {
+          "name": "Preparación - Registrar destinatario Sprint 4",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Lautaro\",\"apellido\":\"Risso\",\"dni\":30111224,\"email\":\"{{s4RecipientEmail}}\",\"telefono\":\"+541155551235\",\"password\":\"{{s4Password}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "if (pm.response.code === 201) {",
+            "  const user = pm.response.json();",
+            "  pm.test('Destinatario con cuenta diferente', () => { pm.expect(user.accountId).to.be.a('number').and.above(0); pm.expect(user.accountId).not.to.eql(pm.variables.get('s4SourceAccountId')); });",
+            "  pm.variables.set('s4RecipientAccountId', user.accountId);",
+            "  pm.variables.set('s4RecipientCvu', user.cvu); pm.variables.set('s4RecipientAlias', user.alias);",
+            "}"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Login origen Sprint 4",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"{{s4SourceEmail}}\",\"password\":\"{{s4Password}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const token = pm.response.json().accessToken;",
+            "pm.test('Token del origen disponible', () => pm.expect(token).to.be.a('string').and.not.empty);",
+            "if (!token) pm.execution.setNextRequest(null); else pm.variables.set('s4SourceToken', token);"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Login destinatario Sprint 4",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"{{s4RecipientEmail}}\",\"password\":\"{{s4Password}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const token = pm.response.json().accessToken;",
+            "pm.test('Token del destinatario disponible', () => pm.expect(token).to.be.a('string').and.not.empty);",
+            "if (!token) pm.execution.setNextRequest(null); else pm.variables.set('s4RecipientToken', token);"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Verificar cuenta origen Sprint 4",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const account = pm.response.json();",
+            "const valid = account.id === pm.variables.get('s4SourceAccountId') && account.cvu === pm.variables.get('s4SourceCvu') && account.alias === pm.variables.get('s4SourceAlias') && account.balance === 0;",
+            "pm.test('Cuenta origen coincide con registro y saldo cero', () => pm.expect(valid).to.eql(true));",
+            "if (!valid) pm.execution.setNextRequest(null);"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Verificar cuenta destinatario Sprint 4",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const account = pm.response.json();",
+            "const valid = account.id === pm.variables.get('s4RecipientAccountId') && account.cvu === pm.variables.get('s4RecipientCvu') && account.alias === pm.variables.get('s4RecipientAlias') && account.balance === 0;",
+            "pm.test('Cuenta destinatario coincide con registro y saldo cero', () => pm.expect(valid).to.eql(true));",
+            "if (!valid) pm.execution.setNextRequest(null);"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Actividad origen vacía Sprint 4",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Origen sin movimientos iniciales', () => pm.expect(pm.response.json()).to.eql([]));"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Actividad destinatario vacía Sprint 4",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Destinatario sin movimientos iniciales', () => pm.expect(pm.response.json()).to.eql([]));"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Asociar CREDIT Sprint 4",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/cards", "body": { "mode": "raw", "raw": "{\"cardNumber\":\"{{s4CardNumber}}\",\"type\":\"CREDIT\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const card = pm.response.json();",
+            "pm.test('CREDIT asociada', () => { pm.expect(card).to.have.all.keys('id','type'); pm.expect(card.type).to.eql('CREDIT'); pm.expect(card.id).to.be.a('number').and.above(0); });",
+            "pm.variables.set('s4CardId', card.id);"
+          ] } }]
+        },
+        {
+          "name": "Caso 1 - Destinatarios vacíos",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Sin destinatarios previos', () => pm.expect(pm.response.json()).to.eql([]));"
+          ] } }]
+        },
+        {
+          "name": "Caso 13 - Depósito conserva HTTP 201",
+          "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/deposits", "body": { "mode": "raw", "raw": "{\"cardId\":{{s4CardId}},\"amount\":100}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const deposit = pm.response.json();",
+            "pm.test('Ingreso CREDIT de 100', () => {",
+            "  pm.expect(deposit).to.have.all.keys('id','amount','type','description','transactionDate','balanceAfter');",
+            "  pm.expect(deposit.id).to.be.a('number').and.above(0);",
+            "  pm.expect(deposit.amount).to.eql(100); pm.expect(deposit.type).to.eql('CREDIT'); pm.expect(deposit.balanceAfter).to.eql(100);",
+            "});",
+            "pm.variables.set('s4Deposit', JSON.stringify(deposit));"
+          ] } }]
+        },
+        {
+          "name": "Caso 13 - Saldo origen tras depósito",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Saldo origen 100', () => pm.expect(pm.response.json().balance).to.eql(100));"
+          ] } }]
+        },
+        {
+          "name": "Caso 13 - Actividad origen tras depósito",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Únicamente el depósito', () => {",
+            "  const activity = pm.response.json(); const deposit = JSON.parse(pm.variables.get('s4Deposit'));",
+            "  pm.expect(activity).to.have.lengthOf(1);",
+            "  const persisted = activity[0];",
+            "  pm.expect(persisted).to.have.all.keys('id','amount','type','description','transactionDate','balanceAfter');",
+            "  pm.expect(persisted.transactionDate).to.be.a('string'); pm.expect(deposit.transactionDate).to.be.a('string');",
+            "  const persistedDate = Date.parse(persisted.transactionDate); const postedDate = Date.parse(deposit.transactionDate);",
+            "  pm.expect(Number.isFinite(persistedDate)).to.eql(true); pm.expect(Number.isFinite(postedDate)).to.eql(true);",
+            "  // POST usa LocalDateTime.now(); MySQL DATETIME(3) persiste precisión de milisegundos.",
+            "  pm.expect(Math.abs(persistedDate - postedDate), 'Precisión temporal POST/GET: máximo 1 ms').to.be.at.most(1);",
+            "  pm.expect(persisted).to.eql({...deposit, transactionDate:persisted.transactionDate});",
+            "  // Desde este GET, toda comparación posterior conserva igualdad exacta, incluida la fecha.",
+            "  pm.variables.set('s4Deposit', JSON.stringify(persisted));",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Caso 13 - Saldo destinatario intacto",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Saldo destinatario cero', () => pm.expect(pm.response.json().balance).to.eql(0));"
+          ] } }]
+        },
+        {
+          "name": "Caso 13 - Actividad destinatario intacta",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Destinatario sin ingresos ajenos', () => pm.expect(pm.response.json()).to.eql([]));"
+          ] } }]
+        },
+        { "name": "Caso 2 - Transferencia por CVU", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientCvu}}\",\"amount\":10}" } } },
+        {
+          "name": "Caso 2 - Saldo origen tras CVU",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Origen debitado en 10', () => pm.expect(pm.response.json().balance).to.eql(90));"
+          ] } }]
+        },
+        {
+          "name": "Caso 2 - Saldo destinatario tras CVU",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Destinatario acreditado en 10', () => pm.expect(pm.response.json().balance).to.eql(10));"
+          ] } }]
+        },
+        {
+          "name": "Caso 2 - Actividad origen tras CVU",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const activity = pm.response.json();",
+            "pm.test('Un DEBIT y el depósito intacto', () => {",
+            "  pm.expect(activity).to.have.lengthOf(2); pm.expect(activity[1]).to.eql(JSON.parse(pm.variables.get('s4Deposit')));",
+            "  pm.expect(activity[0].type).to.eql('DEBIT'); pm.expect(activity[0].amount).to.eql(-10); pm.expect(activity[0].balanceAfter).to.eql(90);",
+            "  pm.expect(activity[0].id).not.to.eql(activity[1].id);",
+            "});",
+            "pm.variables.set('s4SourceActivity', JSON.stringify(activity));"
+          ] } }]
+        },
+        {
+          "name": "Caso 2 - Actividad destinatario tras CVU",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const activity = pm.response.json();",
+            "pm.test('Único CREDIT contraparte de 10', () => { pm.expect(activity).to.have.lengthOf(1); pm.expect(activity[0].type).to.eql('CREDIT'); pm.expect(activity[0].amount).to.eql(10); pm.expect(activity[0].balanceAfter).to.eql(10); });",
+            "pm.variables.set('s4RecipientActivity', JSON.stringify(activity));"
+          ] } }]
+        },
+        { "name": "Caso 3 - Transferencia por alias", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientAlias}}\",\"amount\":5}" } } },
+        {
+          "name": "Caso 3 - Saldo origen tras alias",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Origen debitado en otros 5', () => pm.expect(pm.response.json().balance).to.eql(85));"
+          ] } }]
+        },
+        {
+          "name": "Caso 3 - Saldo destinatario tras alias",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Destinatario acreditado hasta 15', () => pm.expect(pm.response.json().balance).to.eql(15));"
+          ] } }]
+        },
+        {
+          "name": "Caso 3 - Actividad origen tras alias",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const activity = pm.response.json();",
+            "pm.test('Nuevo DEBIT de 5 y actividad previa intacta', () => {",
+            "  pm.expect(activity).to.have.lengthOf(3); pm.expect(activity.slice(1)).to.eql(JSON.parse(pm.variables.get('s4SourceActivity')));",
+            "  pm.expect(activity[0].type).to.eql('DEBIT'); pm.expect(activity[0].amount).to.eql(-5); pm.expect(activity[0].balanceAfter).to.eql(85);",
+            "  pm.expect(new Set(activity.map(t => t.id)).size).to.eql(3);",
+            "});",
+            "pm.variables.set('s4SourceActivity', JSON.stringify(activity));"
+          ] } }]
+        },
+        {
+          "name": "Caso 3 - Actividad destinatario tras alias",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const activity = pm.response.json();",
+            "pm.test('Nuevo CREDIT de 5 y contraparte previa intacta', () => {",
+            "  pm.expect(activity).to.have.lengthOf(2); pm.expect(activity.slice(1)).to.eql(JSON.parse(pm.variables.get('s4RecipientActivity')));",
+            "  pm.expect(activity[0].type).to.eql('CREDIT'); pm.expect(activity[0].amount).to.eql(5); pm.expect(activity[0].balanceAfter).to.eql(15);",
+            "  pm.expect(activity[0].id).not.to.eql(activity[1].id);",
+            "});",
+            "pm.variables.set('s4RecipientActivity', JSON.stringify(activity));"
+          ] } }]
+        },
+        { "name": "Caso 4 - Destino desconocido", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"inexistente.{{s4CardNumber}}\",\"amount\":1}" } } },
+        { "name": "Caso 4 - Destination ausente", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"amount\":1}" } } },
+        { "name": "Caso 4 - Sin efectos - Saldo origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" } },
+        { "name": "Caso 4 - Sin efectos - Actividad origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" } },
+        { "name": "Caso 4 - Sin efectos - Saldo destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" } },
+        { "name": "Caso 4 - Sin efectos - Actividad destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" } },
+        { "name": "Caso 5 - Transferencia a CVU propio", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4SourceCvu}}\",\"amount\":1}" } } },
+        { "name": "Caso 5 - Transferencia a alias propio", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4SourceAlias}}\",\"amount\":1}" } } },
+        { "name": "Caso 5 - Sin efectos - Saldo origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" } },
+        { "name": "Caso 5 - Sin efectos - Actividad origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" } },
+        { "name": "Caso 5 - Sin efectos - Saldo destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" } },
+        { "name": "Caso 5 - Sin efectos - Actividad destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" } },
+        { "name": "Caso 6 - Fondos insuficientes", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientCvu}}\",\"amount\":86}" } } },
+        { "name": "Caso 6 - Sin efectos - Saldo origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" } },
+        { "name": "Caso 6 - Sin efectos - Actividad origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" } },
+        { "name": "Caso 6 - Sin efectos - Saldo destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" } },
+        { "name": "Caso 6 - Sin efectos - Actividad destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" } },
+        { "name": "Caso 7 - Monto cero", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientCvu}}\",\"amount\":0}" } } },
+        { "name": "Caso 7 - Monto negativo", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientCvu}}\",\"amount\":-1}" } } },
+        { "name": "Caso 7 - Monto con tres decimales", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientCvu}}\",\"amount\":0.001}" } } },
+        { "name": "Caso 7 - Sin efectos - Saldo origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" } },
+        { "name": "Caso 7 - Sin efectos - Actividad origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" } },
+        { "name": "Caso 7 - Sin efectos - Saldo destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" } },
+        { "name": "Caso 7 - Sin efectos - Actividad destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" } },
+        { "name": "Caso 8 - GET de cuenta ajena", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/transferences" } },
+        { "name": "Caso 8 - POST de cuenta ajena", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4SourceCvu}}\",\"amount\":1}" } } },
+        { "name": "Caso 8 - Sin efectos - Saldo origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" } },
+        { "name": "Caso 8 - Sin efectos - Actividad origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" } },
+        { "name": "Caso 8 - Sin efectos - Saldo destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" } },
+        { "name": "Caso 8 - Sin efectos - Actividad destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" } },
+        { "name": "Caso 9 - GET sin JWT", "request": { "method": "GET", "auth": { "type": "noauth" }, "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences" } },
+        { "name": "Caso 9 - POST sin JWT", "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientCvu}}\",\"amount\":1}" } } },
+        { "name": "Caso 9 - GET con JWT inválido", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "invalid-jwt", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences" } },
+        { "name": "Caso 9 - POST con JWT inválido", "request": { "method": "POST", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "invalid-jwt", "type": "string" }] }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientCvu}}\",\"amount\":1}" } } },
+        { "name": "Caso 9 - Sin efectos - Saldo origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" } },
+        { "name": "Caso 9 - Sin efectos - Actividad origen", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" } },
+        { "name": "Caso 9 - Sin efectos - Saldo destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" } },
+        { "name": "Caso 9 - Sin efectos - Actividad destinatario", "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" } },
+        {
+          "name": "Preparación - Registrar nuevo destinatario Sprint 4",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/users/register", "body": { "mode": "raw", "raw": "{\"nombre\":\"Lautaro\",\"apellido\":\"Risso\",\"dni\":30111225,\"email\":\"{{s4NewEmail}}\",\"telefono\":\"+541155551236\",\"password\":\"{{s4Password}}\"}" } },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "if (!pm.variables.get('s4NewRecipientIndex')) { pm.variables.set('s4NewRecipientIndex', 2); pm.variables.set('s4NewRecipients', '[]'); }",
+              "pm.variables.set('s4NewEmail', 'sprint4-next-' + pm.variables.replaceIn('{{$guid}}') + '@dmh.test');",
+              "['s4NewAccountId','s4NewCvu','s4NewAlias','s4NewToken'].forEach(key => pm.variables.unset(key));"
+            ] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "if (pm.response.code === 201) {",
+              "  const user = pm.response.json();",
+              "  pm.test('Nueva cuenta distinta de las anteriores', () => {",
+              "    pm.expect(user.accountId).to.be.a('number').and.above(0);",
+              "    const previous = JSON.parse(pm.variables.get('s4NewRecipients')).map(r => r.accountId);",
+              "    pm.expect(previous.concat([pm.variables.get('s4SourceAccountId'), pm.variables.get('s4RecipientAccountId')])).not.to.include(user.accountId);",
+              "  });",
+              "  pm.variables.set('s4NewAccountId', user.accountId);",
+              "  pm.variables.set('s4NewCvu', user.cvu); pm.variables.set('s4NewAlias', user.alias);",
+              "}"
+            ] } }
+          ]
+        },
+        {
+          "name": "Preparación - Login nuevo destinatario Sprint 4",
+          "request": { "method": "POST", "auth": { "type": "noauth" }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/users-service/auth/login", "body": { "mode": "raw", "raw": "{\"email\":\"{{s4NewEmail}}\",\"password\":\"{{s4Password}}\"}" } },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const token = pm.response.json().accessToken;",
+            "pm.test('Token del nuevo destinatario disponible', () => pm.expect(token).to.be.a('string').and.not.empty);",
+            "if (!token) pm.execution.setNextRequest(null); else pm.variables.set('s4NewToken', token);"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Verificar nueva cuenta Sprint 4",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4NewToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4NewAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const account = pm.response.json();",
+            "const valid = account.id === pm.variables.get('s4NewAccountId') && account.cvu === pm.variables.get('s4NewCvu') && account.alias === pm.variables.get('s4NewAlias') && account.balance === 0;",
+            "pm.test('Nueva cuenta propia coincide con registro y saldo cero', () => pm.expect(valid).to.eql(true));",
+            "if (!valid) pm.execution.setNextRequest(null);"
+          ] } }]
+        },
+        {
+          "name": "Preparación - Verificar nueva actividad vacía Sprint 4",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4NewToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4NewAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Nuevo destinatario sin movimientos', () => pm.expect(pm.response.json()).to.eql([]));",
+            "if (pm.response.json().length !== 0) pm.execution.setNextRequest(null);"
+          ] } }]
+        },
+        { "name": "Caso 10 - Transferir a nuevo destinatario", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4NewCvu}}\",\"amount\":1}" } } },
+        {
+          "name": "Caso 10 - Saldo origen tras nuevo destinatario",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const expected = 86 - Number(pm.variables.get('s4NewRecipientIndex'));",
+            "pm.test('Origen debitado en 1 por destinatario nuevo', () => pm.expect(pm.response.json().balance).to.eql(expected));"
+          ] } }]
+        },
+        {
+          "name": "Caso 10 - Actividad origen tras nuevo destinatario",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const activity = pm.response.json(); const previous = JSON.parse(pm.variables.get('s4SourceActivity'));",
+            "pm.test('Solo un nuevo DEBIT de 1 y movimientos previos intactos', () => {",
+            "  pm.expect(activity).to.have.lengthOf(previous.length + 1); pm.expect(activity.slice(1)).to.eql(previous);",
+            "  pm.expect(activity[0].type).to.eql('DEBIT'); pm.expect(activity[0].amount).to.eql(-1);",
+            "  pm.expect(activity[0].balanceAfter).to.eql(86 - Number(pm.variables.get('s4NewRecipientIndex')));",
+            "  pm.expect(new Set(activity.map(t => t.id)).size).to.eql(activity.length);",
+            "});",
+            "pm.variables.set('s4SourceActivity', JSON.stringify(activity));"
+          ] } }]
+        },
+        {
+          "name": "Caso 10 - Saldo nuevo destinatario",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4NewToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4NewAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Nuevo destinatario acreditado en 1', () => pm.expect(pm.response.json().balance).to.eql(1));"
+          ] } }]
+        },
+        {
+          "name": "Caso 10 - Actividad nuevo destinatario",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4NewToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4NewAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Único CREDIT contraparte de 1', () => { const activity = pm.response.json(); pm.expect(activity).to.have.lengthOf(1); pm.expect(activity[0].type).to.eql('CREDIT'); pm.expect(activity[0].amount).to.eql(1); pm.expect(activity[0].balanceAfter).to.eql(1); });",
+            "const recipients = JSON.parse(pm.variables.get('s4NewRecipients'));",
+            "recipients.unshift({accountId:pm.variables.get('s4NewAccountId'),cvu:pm.variables.get('s4NewCvu'),alias:pm.variables.get('s4NewAlias')});",
+            "pm.variables.set('s4NewRecipients', JSON.stringify(recipients));",
+            "const index = Number(pm.variables.get('s4NewRecipientIndex'));",
+            "if (index < 6) { pm.variables.set('s4NewRecipientIndex', index + 1); pm.execution.setNextRequest('Preparación - Registrar nuevo destinatario Sprint 4'); }"
+          ] } }]
+        },
+        {
+          "name": "Caso 10 - Últimos cinco destinatarios distintos",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const expected = JSON.parse(pm.variables.get('s4NewRecipients')).map(r => ({cvu:r.cvu,alias:r.alias}));",
+            "pm.test('Cinco más recientes exactos; primer destinatario excluido', () => { pm.expect(expected).to.have.lengthOf(5); pm.expect(pm.response.json()).to.eql(expected); pm.expect(expected.map(r => r.cvu)).not.to.include(pm.variables.get('s4RecipientCvu')); });"
+          ] } }]
+        },
+        { "name": "Caso 11 - Repetir primer destinatario", "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences", "body": { "mode": "raw", "raw": "{\"destination\":\"{{s4RecipientCvu}}\",\"amount\":1}" } } },
+        {
+          "name": "Caso 11 - Saldo origen tras repetición",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Saldo origen 79', () => pm.expect(pm.response.json().balance).to.eql(79));"
+          ] } }]
+        },
+        {
+          "name": "Caso 11 - Actividad origen tras repetición",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const activity = pm.response.json();",
+            "pm.test('Noveno movimiento, DEBIT de 1, anteriores intactos', () => { pm.expect(activity).to.have.lengthOf(9); pm.expect(activity.slice(1)).to.eql(JSON.parse(pm.variables.get('s4SourceActivity'))); pm.expect(activity[0].amount).to.eql(-1); pm.expect(activity[0].type).to.eql('DEBIT'); pm.expect(activity[0].balanceAfter).to.eql(79); pm.expect(new Set(activity.map(t => t.id)).size).to.eql(9); });",
+            "pm.variables.set('s4SourceActivity', JSON.stringify(activity));"
+          ] } }]
+        },
+        {
+          "name": "Caso 11 - Saldo primer destinatario tras repetición",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Primer destinatario conserva acumulado 16', () => pm.expect(pm.response.json().balance).to.eql(16));"
+          ] } }]
+        },
+        {
+          "name": "Caso 11 - Actividad primer destinatario tras repetición",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const activity = pm.response.json();",
+            "pm.test('Tercer CREDIT de 1 y actividad anterior intacta', () => { pm.expect(activity).to.have.lengthOf(3); pm.expect(activity.slice(1)).to.eql(JSON.parse(pm.variables.get('s4RecipientActivity'))); pm.expect(activity[0].amount).to.eql(1); pm.expect(activity[0].type).to.eql('CREDIT'); pm.expect(activity[0].balanceAfter).to.eql(16); pm.expect(new Set(activity.map(t => t.id)).size).to.eql(3); });",
+            "pm.variables.set('s4RecipientActivity', JSON.stringify(activity));"
+          ] } }]
+        },
+        {
+          "name": "Caso 11 - Repetido único al principio",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const recent = JSON.parse(pm.variables.get('s4NewRecipients')).slice(0,4).map(r => ({cvu:r.cvu,alias:r.alias}));",
+            "const expected = [{cvu:pm.variables.get('s4RecipientCvu'),alias:pm.variables.get('s4RecipientAlias')}].concat(recent);",
+            "pm.test('Repetición renueva orden sin duplicados y mantiene límite cinco', () => { const recipients = pm.response.json(); pm.expect(recipients).to.eql(expected); pm.expect(recipients).to.have.lengthOf(5); pm.expect(new Set(recipients.map(r => r.cvu)).size).to.eql(5); });",
+            "pm.variables.set('s4RecentRecipients', JSON.stringify(expected));"
+          ] } }]
+        },
+        {
+          "name": "Caso 12 - Renombrar alias del primer destinatario",
+          "request": { "method": "PATCH", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [{ "key": "Content-Type", "value": "application/json" }], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}", "body": { "mode": "raw", "raw": "{\"alias\":\"{{s4RenamedAlias}}\"}" } },
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.variables.set('s4RenamedAlias', 'sprint4.' + pm.variables.replaceIn('{{$guid}}'));"] } },
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('Alias actualizado con CVU y saldo intactos', () => pm.expect(pm.response.json()).to.eql({id:pm.variables.get('s4RecipientAccountId'),cvu:pm.variables.get('s4RecipientCvu'),alias:pm.variables.get('s4RenamedAlias'),balance:16}));"
+            ] } }
+          ]
+        },
+        {
+          "name": "Caso 12 - Lista refleja alias actual sin reordenar",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/transferences" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "const expected = JSON.parse(pm.variables.get('s4RecentRecipients')); expected[0].alias = pm.variables.get('s4RenamedAlias');",
+            "pm.test('Solo cambia alias; CVU, límite y orden intactos', () => pm.expect(pm.response.json()).to.eql(expected));"
+          ] } }]
+        },
+        {
+          "name": "Caso 12 - Cuenta origen intacta",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4SourceAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Alias ajeno no modifica origen', () => pm.expect(pm.response.json()).to.eql({id:pm.variables.get('s4SourceAccountId'),cvu:pm.variables.get('s4SourceCvu'),alias:pm.variables.get('s4SourceAlias'),balance:79}));"
+          ] } }]
+        },
+        {
+          "name": "Caso 12 - Cuenta destinatario persiste alias",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts-service/accounts/{{s4RecipientAccountId}}" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Alias persistido, CVU y saldo intactos', () => pm.expect(pm.response.json()).to.eql({id:pm.variables.get('s4RecipientAccountId'),cvu:pm.variables.get('s4RecipientCvu'),alias:pm.variables.get('s4RenamedAlias'),balance:16}));"
+          ] } }]
+        },
+        {
+          "name": "Caso 12 - Actividad origen intacta",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/accounts/{{s4SourceAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Cambio de alias no altera ledger origen', () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get('s4SourceActivity'))));"
+          ] } }]
+        },
+        {
+          "name": "Caso 12 - Actividad destinatario intacta",
+          "request": { "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{s4RecipientToken}}", "type": "string" }] }, "header": [], "url": "{{baseUrl}}/accounts/{{s4RecipientAccountId}}/activity" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Cambio de alias no altera ledger destinatario', () => pm.expect(pm.response.json()).to.eql(JSON.parse(pm.variables.get('s4RecipientActivity'))));"
+          ] } }]
+        },
+        { "name": "Limpieza - Eliminar CREDIT Sprint 4", "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/cards/accounts/{{s4SourceAccountId}}/cards/{{s4CardId}}" } },
+        {
+          "name": "Limpieza - Verificar tarjetas vacías Sprint 4",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/cards/accounts/{{s4SourceAccountId}}/cards" },
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Sin tarjetas asociadas al finalizar', () => pm.expect(pm.response.json()).to.eql([]));"
+          ] } }]
+        }
       ]
     }
   ]

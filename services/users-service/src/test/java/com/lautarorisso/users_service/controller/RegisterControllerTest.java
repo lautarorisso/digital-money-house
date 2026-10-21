@@ -37,11 +37,12 @@ class RegisterControllerTest {
   @Test
   void registerReturnsCreatedContract() throws Exception {
     when(userService.register(any())).thenReturn(new RegisterResponse(42L, "Lautaro", "Risso",
-        12345678L, "lautaro@example.com", "+541112345678", "1234567890123456789012", "casa.rio.sol"));
+        12345678L, "lautaro@example.com", "+541112345678", "1234567890123456789012", "casa.rio.sol", 9L));
 
     mockMvc.perform(post("/users/register").contentType(MediaType.APPLICATION_JSON).content(validRequest()))
         .andExpect(status().isCreated())
         .andExpect(jsonPath("$.id").value(42))
+        .andExpect(jsonPath("$.accountId").value(9))
         .andExpect(jsonPath("$.cvu").value("1234567890123456789012"))
         .andExpect(jsonPath("$.alias").value("casa.rio.sol"));
   }
