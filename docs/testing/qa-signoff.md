@@ -24,7 +24,11 @@ Fallaron inicialmente los casos 5, 6, 7, 13 y 14 de Sprint 1 ([BUG-001 a BUG-005
 | 4         | 13 ejecutados y aprobados                           |
 | **Total** | **54 ejecutados; 14 adicionales con scripts**       |
 
-Suites adicionales, sin sumarlas a los 68 casos únicos: users-service **7/7**, Java Sprint 2 (`Sprint2SmokeIT`) **17/17** y Java Sprint 3 (`Sprint3ActivityIT`) **19/19** ejecutados/aprobados.
+Suites adicionales, sin sumarlas a los 68 casos únicos:
+
+- Suite Maven: **52/52 aprobados** — account-service **33/33**, api-gateway **3/3**, service-discovery **1/1** y users-service **15/15**. Incluye compensación del registro, creación idempotente de cuentas, recuperación de respuesta perdida y colisiones concurrentes simuladas.
+- Java Sprint 2 (`Sprint2SmokeIT`): **17/17 aprobados**.
+- Java Sprint 3 (`Sprint3ActivityIT`): **19/19 aprobados**.
 
 ## Cierre
 

@@ -26,6 +26,7 @@ public class RegisterController {
   @ApiResponse(responseCode = "201", description = "Usuario registrado")
   @ApiResponse(responseCode = "400", description = "Datos de registro inválidos")
   @ApiResponse(responseCode = "409", description = "Usuario ya registrado")
+  @ApiResponse(responseCode = "503", description = "Registro no completado o resultado de cuenta no confirmado; consultar el mensaje de recuperación")
   @PostMapping("/users/register")
   @ResponseStatus(HttpStatus.CREATED)
   public RegisterResponse register(@Valid @RequestBody RegisterRequest request) {

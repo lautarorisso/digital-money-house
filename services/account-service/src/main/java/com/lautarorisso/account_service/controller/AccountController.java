@@ -76,8 +76,8 @@ public class AccountController {
     return internalTransferService.recipients(id, jwt.getSubject());
   }
 
-  @Operation(summary = "Crear una cuenta", description = "Requiere el cliente de servicio autorizado")
-  @ApiResponse(responseCode = "201", description = "Cuenta creada")
+  @Operation(summary = "Crear o recuperar una cuenta", description = "Requiere el cliente de servicio autorizado. Repetir el mismo userId y ownerSub devuelve la cuenta existente; otra identidad recibe 403.")
+  @ApiResponse(responseCode = "201", description = "Cuenta creada o recuperada sin duplicados")
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
   public AccountResponse create(@AuthenticationPrincipal Jwt jwt,

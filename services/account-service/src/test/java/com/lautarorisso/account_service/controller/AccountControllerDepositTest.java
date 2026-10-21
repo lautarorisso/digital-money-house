@@ -56,9 +56,9 @@ class AccountControllerDepositTest {
   void setUp() {
     logs.start();
     logger.addAppender(logs);
-    Jwt jwt = Jwt.withTokenValue("test").header("alg", "none").subject("owner").build();
+    Jwt jwt = Jwt.withTokenValue("test").header("alg", "none").subject("owner").claim("azp", "dmh-backend").build();
     mvc = MockMvcBuilders.standaloneSetup(new AccountController(
-        mock(AccountService.class), mock(CardService.class), transactions, transfers))
+        accounts, mock(CardService.class), transactions, transfers))
         .setCustomArgumentResolvers(new HandlerMethodArgumentResolver() {
           public boolean supportsParameter(MethodParameter parameter) {
             return parameter.hasParameterAnnotation(AuthenticationPrincipal.class);
@@ -79,6 +79,39 @@ class AccountControllerDepositTest {
     }
     securedMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/accounts/1"))
         .andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  void repeatedAccountCreationReturnsTheSamePublicResponseWithoutAnotherInsert() throws Exception {
+    var repository = mock(com.lautarorisso.account_service.repository.AccountRepository.class);
+    var cvu = mock(CvuGenerator.class);
+    var alias = mock(AliasGenerator.class);
+    var manager = mock(org.springframework.transaction.PlatformTransactionManager.class);
+    var existing = mock(com.lautarorisso.account_service.entity.AccountEntity.class);
+    when(existing.getId()).thenReturn(9L);
+    when(existing.getUserId()).thenReturn(42L);
+    when(existing.getOwnerSub()).thenReturn("owner");
+    when(existing.getCvu()).thenReturn("1234567890123456789012");
+    when(existing.getAlias()).thenReturn("casa.rio.sol");
+    when(repository.findByUserId(42L)).thenReturn(java.util.Optional.empty(), java.util.Optional.of(existing));
+    when(repository.saveAndFlush(any())).thenReturn(existing);
+    when(cvu.generate()).thenReturn("1234567890123456789012");
+    when(alias.generate()).thenReturn("casa.rio.sol");
+    var service = new AccountService(repository, cvu, alias, manager);
+    when(accounts.createAccount(any(), any(), any())).thenAnswer(invocation -> service.createAccount(
+        invocation.getArgument(0), invocation.getArgument(1), invocation.getArgument(2)));
+
+    for (int i = 0; i < 2; i++) {
+      mvc.perform(post("/accounts").contentType(MediaType.APPLICATION_JSON)
+          .content("{\"userId\":42,\"ownerSub\":\"owner\"}"))
+          .andExpect(status().isCreated()).andExpect(jsonPath("$.id").value(9))
+          .andExpect(jsonPath("$.userId").value(42))
+          .andExpect(jsonPath("$.cvu").value("1234567890123456789012"))
+          .andExpect(jsonPath("$.alias").value("casa.rio.sol"));
+    }
+    verify(repository).saveAndFlush(any());
+    verify(cvu).generate();
+    verify(alias).generate();
   }
 
   @Test

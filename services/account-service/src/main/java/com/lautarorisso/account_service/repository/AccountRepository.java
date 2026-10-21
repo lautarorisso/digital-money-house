@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
 
-  boolean existsByUserId(Long userId);
+  Optional<AccountEntity> findByUserId(Long userId);
 
   @Query("select a.ownerSub from AccountEntity a where a.id = :id")
   Optional<String> findOwnerSubById(@Param("id") Long id);

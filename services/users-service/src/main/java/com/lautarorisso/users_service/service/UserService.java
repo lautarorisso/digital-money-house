@@ -48,16 +48,34 @@ public class UserService {
     String token = keycloakClient.getServiceAccountToken();
     String keycloakUserId = keycloakClient.createUser(token, request.email(), request.email(),
         request.nombre(), request.apellido(), request.password());
-    UserEntity user = userRepository.save(
-        new UserEntity(request.nombre(), request.apellido(), request.dni(), request.email(), request.telefono(),
-            keycloakUserId, List.of(userRole)));
+    UserEntity user;
+    try {
+      user = userRepository.save(
+          new UserEntity(request.nombre(), request.apellido(), request.dni(), request.email(), request.telefono(),
+              keycloakUserId, List.of(userRole)));
+    } catch (RuntimeException ex) {
+      rollbackRegistration(null, token, keycloakUserId);
+      throw new ServiceUnavailableException("User persistence failed. Identity cleanup was attempted.", ex);
+    }
     AccountResponse account;
     try {
       account = accountClient.createAccount(new CreateAccountRequest(user.getId(), keycloakUserId));
     } catch (RuntimeException ex) {
-      rollbackRegistration(user, token, keycloakUserId);
-      throw new ServiceUnavailableException(
-          "Account creation failed. The registration was rolled back, please try again.", ex);
+      if (ex instanceof feign.FeignException failure
+          && failure.status() >= 400 && failure.status() < 500
+          && failure.status() != 408 && failure.status() != 429) {
+        rollbackRegistration(user, token, keycloakUserId);
+        throw new ServiceUnavailableException("Account creation was rejected. Registration cleanup was attempted.", ex);
+      }
+      try {
+        account = accountClient.createAccount(new CreateAccountRequest(user.getId(), keycloakUserId));
+      } catch (RuntimeException recoveryFailure) {
+        if (recoveryFailure != ex) {
+          recoveryFailure.addSuppressed(ex);
+        }
+        throw new ServiceUnavailableException(
+            "Account creation could not be confirmed. User and identity were preserved for recovery.", recoveryFailure);
+      }
     }
     return new RegisterResponse(user.getId(), user.getNombre(), user.getApellido(),
         user.getDni(), user.getEmail(), user.getTelefono(), account.cvu(), account.alias(), account.id());
@@ -122,15 +140,17 @@ public class UserService {
   }
 
   private void rollbackRegistration(UserEntity user, String keycloakToken, String keycloakUserId) {
-    try {
-      userRepository.delete(user);
-    } catch (RuntimeException ex) {
-      log.warn("Rollback: could not delete user {} from the database", user.getEmail(), ex);
+    if (user != null) {
+      try {
+        userRepository.delete(user);
+      } catch (RuntimeException ex) {
+        log.warn("Registration cleanup could not delete local user {}", user.getId(), ex);
+      }
     }
     try {
       keycloakClient.deleteUser(keycloakToken, keycloakUserId);
     } catch (RuntimeException ex) {
-      log.warn("Rollback: could not delete user {} from Keycloak", user.getEmail(), ex);
+      log.warn("Registration cleanup could not delete identity {}", keycloakUserId, ex);
     }
   }
 }
